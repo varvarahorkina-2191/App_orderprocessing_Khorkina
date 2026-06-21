@@ -4,4 +4,6 @@ module com.example.app_orderprocessing {
 
     exports com.example.app_orderprocessing;
     exports com.example.app_orderprocessing.database;
+
+    opens com.example.app_orderprocessing.model to javafx.base;
 }

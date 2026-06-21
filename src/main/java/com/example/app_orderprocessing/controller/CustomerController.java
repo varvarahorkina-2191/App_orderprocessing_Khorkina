@@ -1,6 +1,7 @@
 package com.example.app_orderprocessing.controller;
 
 import com.example.app_orderprocessing.dao.CustomerDao;
+import com.example.app_orderprocessing.model.Customer;
 import com.example.app_orderprocessing.view.CustomerView;
 
 public class CustomerController {
@@ -13,11 +14,61 @@ public class CustomerController {
         customerDao = new CustomerDao();
 
         loadCustomers();
+
+        customerView.getAddButton().setOnAction(event -> addCustomer());
     }
 
     public void loadCustomers() {
         customerView.getCustomerTable().getItems().setAll(
                 customerDao.getAllCustomers()
         );
+    }
+
+    private void addCustomer() {
+        String name = customerView.getNameField().getText();
+        String address = customerView.getAddressField().getText();
+        String phone = customerView.getPhoneField().getText();
+        String contact = customerView.getContactField().getText();
+
+        if (name.isBlank()
+                || address.isBlank()
+                || phone.isBlank()
+                || contact.isBlank()) {
+
+            customerView.getMessageLabel().setText(
+                    "Заполните все поля"
+            );
+
+            return;
+        }
+
+        Customer customer = new Customer(
+                name,
+                address,
+                phone,
+                contact
+        );
+
+        boolean added = customerDao.addCustomer(customer);
+
+        if (added) {
+            customerView.getMessageLabel().setText(
+                    "Заказчик добавлен"
+            );
+
+            clearFields();
+            loadCustomers();
+        } else {
+            customerView.getMessageLabel().setText(
+                    "Не удалось добавить заказчика"
+            );
+        }
+    }
+
+    private void clearFields() {
+        customerView.getNameField().clear();
+        customerView.getAddressField().clear();
+        customerView.getPhoneField().clear();
+        customerView.getContactField().clear();
     }
 }

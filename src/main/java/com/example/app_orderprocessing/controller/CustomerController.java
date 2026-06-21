@@ -16,6 +16,7 @@ public class CustomerController {
         loadCustomers();
 
         customerView.getAddButton().setOnAction(event -> addCustomer());
+        customerView.getDeleteButton().setOnAction(event -> deleteCustomer());
     }
 
     public void loadCustomers() {
@@ -61,6 +62,37 @@ public class CustomerController {
         } else {
             customerView.getMessageLabel().setText(
                     "Не удалось добавить заказчика"
+            );
+        }
+    }
+
+    private void deleteCustomer() {
+        Customer selectedCustomer =
+                customerView.getCustomerTable()
+                        .getSelectionModel()
+                        .getSelectedItem();
+
+        if (selectedCustomer == null) {
+            customerView.getMessageLabel().setText(
+                    "Выберите заказчика"
+            );
+
+            return;
+        }
+
+        boolean deleted =
+                customerDao.deleteCustomer(selectedCustomer.getId());
+
+        if (deleted) {
+            customerView.getMessageLabel().setText(
+                    "Заказчик удалён"
+            );
+
+            clearFields();
+            loadCustomers();
+        } else {
+            customerView.getMessageLabel().setText(
+                    "Не удалось удалить заказчика"
             );
         }
     }

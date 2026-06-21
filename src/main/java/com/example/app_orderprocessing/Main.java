@@ -1,5 +1,6 @@
 package com.example.app_orderprocessing;
 
+import com.example.app_orderprocessing.database.DatabaseConnection;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
@@ -9,9 +10,11 @@ public class Main extends Application {
 
     @Override
     public void start(Stage stage) {
+        DatabaseConnection.getInstance();
+
         Label label = new Label("Приложение запущено");
 
-        Scene scene = new Scene(label, 600, 400);
+        Scene scene = new Scene(label, 400, 200);
 
         stage.setTitle("Обработка заказов");
         stage.setScene(scene);

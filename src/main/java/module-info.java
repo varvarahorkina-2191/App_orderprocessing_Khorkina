@@ -3,4 +3,5 @@ module com.example.app_orderprocessing {
     requires java.sql;
 
     exports com.example.app_orderprocessing;
+    exports com.example.app_orderprocessing.database;
 }

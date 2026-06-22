@@ -1,9 +1,8 @@
 package com.example.app_orderprocessing;
 
-import com.example.app_orderprocessing.controller.CustomerController;
+import com.example.app_orderprocessing.controller.RegistrationController;
 import com.example.app_orderprocessing.database.DatabaseConnection;
-import com.example.app_orderprocessing.view.CustomerView;
-
+import com.example.app_orderprocessing.view.RegistrationView;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
@@ -12,15 +11,14 @@ public class Main extends Application {
 
     @Override
     public void start(Stage stage) {
-
         DatabaseConnection.getInstance();
 
-        CustomerView customerView = new CustomerView();
-        new CustomerController(customerView);
+        RegistrationView view = new RegistrationView();
+        new RegistrationController(view);
 
-        Scene scene = new Scene(customerView, 900, 500);
+        Scene scene = new Scene(view, 400, 350);
 
-        stage.setTitle("Заказчики");
+        stage.setTitle("Регистрация");
         stage.setScene(scene);
         stage.show();
     }

@@ -30,11 +30,16 @@ public class UserDao {
             ResultSet result = statement.executeQuery();
 
             if (result.next()) {
+                int id = result.getInt("id");
+                int roleId = result.getInt("active_role_id");
+                String userLogin = result.getString("login");
+                String passwordHash = result.getString("hash_password");
+
                 User user = new User(
-                        result.getInt("id"),
-                        result.getInt("active_role_id"),
-                        result.getString("login"),
-                        result.getString("hash_password")
+                        id,
+                        roleId,
+                        userLogin,
+                        passwordHash
                 );
 
                 result.close();
@@ -47,7 +52,7 @@ public class UserDao {
             statement.close();
 
         } catch (SQLException e) {
-            System.out.println("Ошибка при поиске пользователя");
+            System.out.println("Ошибка поиска пользователя");
             e.printStackTrace();
         }
 
@@ -68,17 +73,48 @@ public class UserDao {
             statement.setString(2, user.getLogin());
             statement.setString(3, user.getHashPassword());
 
-            int rows = statement.executeUpdate();
+            int result = statement.executeUpdate();
 
             statement.close();
 
-            return rows > 0;
+            if (result > 0) {
+                return true;
+            }
 
         } catch (SQLException e) {
-            System.out.println("Ошибка при добавлении пользователя");
+            System.out.println("Ошибка добавления пользователя");
             e.printStackTrace();
-
-            return false;
         }
+
+        return false;
+    }
+
+    public boolean addUserRole(int userId, int roleId) {
+        String sql = """
+                INSERT INTO user_roles
+                (user_id, role_id)
+                VALUES (?, ?)
+                """;
+
+        try {
+            PreparedStatement statement = connection.prepareStatement(sql);
+
+            statement.setInt(1, userId);
+            statement.setInt(2, roleId);
+
+            int result = statement.executeUpdate();
+
+            statement.close();
+
+            if (result > 0) {
+                return true;
+            }
+
+        } catch (SQLException e) {
+            System.out.println("Ошибка добавления роли");
+            e.printStackTrace();
+        }
+
+        return false;
     }
 }

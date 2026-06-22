@@ -3,6 +3,9 @@ package com.example.app_orderprocessing.controller;
 import com.example.app_orderprocessing.dao.CustomerDao;
 import com.example.app_orderprocessing.model.Customer;
 import com.example.app_orderprocessing.view.CustomerView;
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
+import javafx.scene.input.MouseEvent;
 
 public class CustomerController {
 
@@ -11,16 +14,45 @@ public class CustomerController {
 
     public CustomerController(CustomerView customerView) {
         this.customerView = customerView;
+
         customerDao = new CustomerDao();
 
         loadCustomers();
 
-        customerView.getAddButton().setOnAction(event -> addCustomer());
-        customerView.getDeleteButton().setOnAction(event -> deleteCustomer());
-        customerView.getEditButton().setOnAction(event -> updateCustomer());
+        customerView.getAddButton().setOnAction(
+                new EventHandler<ActionEvent>() {
+                    @Override
+                    public void handle(ActionEvent event) {
+                        addCustomer();
+                    }
+                }
+        );
+
+        customerView.getEditButton().setOnAction(
+                new EventHandler<ActionEvent>() {
+                    @Override
+                    public void handle(ActionEvent event) {
+                        updateCustomer();
+                    }
+                }
+        );
+
+        customerView.getDeleteButton().setOnAction(
+                new EventHandler<ActionEvent>() {
+                    @Override
+                    public void handle(ActionEvent event) {
+                        deleteCustomer();
+                    }
+                }
+        );
 
         customerView.getCustomerTable().setOnMouseClicked(
-                event -> fillFields()
+                new EventHandler<MouseEvent>() {
+                    @Override
+                    public void handle(MouseEvent event) {
+                        fillFields();
+                    }
+                }
         );
     }
 
@@ -36,10 +68,10 @@ public class CustomerController {
         String phone = customerView.getPhoneField().getText();
         String contact = customerView.getContactField().getText();
 
-        if (name.isBlank()
-                || address.isBlank()
-                || phone.isBlank()
-                || contact.isBlank()) {
+        if (name.isEmpty()
+                || address.isEmpty()
+                || phone.isEmpty()
+                || contact.isEmpty()) {
 
             customerView.getMessageLabel().setText(
                     "Заполните все поля"
@@ -55,9 +87,10 @@ public class CustomerController {
                 contact
         );
 
-        boolean added = customerDao.addCustomer(customer);
+        boolean added;
+        added = customerDao.addCustomer(customer);
 
-        if (added) {
+        if (added == true) {
             customerView.getMessageLabel().setText(
                     "Заказчик добавлен"
             );
@@ -71,24 +104,81 @@ public class CustomerController {
         }
     }
 
-    private void deleteCustomer() {
-        Customer selectedCustomer =
-                customerView.getCustomerTable()
-                        .getSelectionModel()
-                        .getSelectedItem();
+    private void updateCustomer() {
+        Customer selectedCustomer;
+
+        selectedCustomer = customerView
+                .getCustomerTable()
+                .getSelectionModel()
+                .getSelectedItem();
 
         if (selectedCustomer == null) {
             customerView.getMessageLabel().setText(
                     "Выберите заказчика"
             );
-
             return;
         }
 
-        boolean deleted =
-                customerDao.deleteCustomer(selectedCustomer.getId());
+        String name = customerView.getNameField().getText();
+        String address = customerView.getAddressField().getText();
+        String phone = customerView.getPhoneField().getText();
+        String contact = customerView.getContactField().getText();
 
-        if (deleted) {
+        if (name.isEmpty()
+                || address.isEmpty()
+                || phone.isEmpty()
+                || contact.isEmpty()) {
+
+            customerView.getMessageLabel().setText(
+                    "Заполните все поля"
+            );
+            return;
+        }
+
+        selectedCustomer.setCustomerName(name);
+        selectedCustomer.setAddress(address);
+        selectedCustomer.setPhoneNumber(phone);
+        selectedCustomer.setContactPerson(contact);
+
+        boolean updated;
+        updated = customerDao.updateCustomer(selectedCustomer);
+
+        if (updated == true) {
+            customerView.getMessageLabel().setText(
+                    "Данные заказчика изменены"
+            );
+
+            clearFields();
+            loadCustomers();
+        } else {
+            customerView.getMessageLabel().setText(
+                    "Не удалось изменить заказчика"
+            );
+        }
+    }
+
+    private void deleteCustomer() {
+        Customer selectedCustomer;
+
+        selectedCustomer = customerView
+                .getCustomerTable()
+                .getSelectionModel()
+                .getSelectedItem();
+
+        if (selectedCustomer == null) {
+            customerView.getMessageLabel().setText(
+                    "Выберите заказчика"
+            );
+            return;
+        }
+
+        boolean deleted;
+
+        deleted = customerDao.deleteCustomer(
+                selectedCustomer.getId()
+        );
+
+        if (deleted == true) {
             customerView.getMessageLabel().setText(
                     "Заказчик удалён"
             );
@@ -103,10 +193,12 @@ public class CustomerController {
     }
 
     private void fillFields() {
-        Customer selectedCustomer =
-                customerView.getCustomerTable()
-                        .getSelectionModel()
-                        .getSelectedItem();
+        Customer selectedCustomer;
+
+        selectedCustomer = customerView
+                .getCustomerTable()
+                .getSelectionModel()
+                .getSelectedItem();
 
         if (selectedCustomer != null) {
             customerView.getNameField().setText(
@@ -123,59 +215,6 @@ public class CustomerController {
 
             customerView.getContactField().setText(
                     selectedCustomer.getContactPerson()
-            );
-        }
-    }
-
-    private void updateCustomer() {
-        Customer selectedCustomer =
-                customerView.getCustomerTable()
-                        .getSelectionModel()
-                        .getSelectedItem();
-
-        if (selectedCustomer == null) {
-            customerView.getMessageLabel().setText(
-                    "Выберите заказчика"
-            );
-
-            return;
-        }
-
-        String name = customerView.getNameField().getText();
-        String address = customerView.getAddressField().getText();
-        String phone = customerView.getPhoneField().getText();
-        String contact = customerView.getContactField().getText();
-
-        if (name.isBlank()
-                || address.isBlank()
-                || phone.isBlank()
-                || contact.isBlank()) {
-
-            customerView.getMessageLabel().setText(
-                    "Заполните все поля"
-            );
-
-            return;
-        }
-
-        selectedCustomer.setCustomerName(name);
-        selectedCustomer.setAddress(address);
-        selectedCustomer.setPhoneNumber(phone);
-        selectedCustomer.setContactPerson(contact);
-
-        boolean updated =
-                customerDao.updateCustomer(selectedCustomer);
-
-        if (updated) {
-            customerView.getMessageLabel().setText(
-                    "Данные заказчика изменены"
-            );
-
-            clearFields();
-            loadCustomers();
-        } else {
-            customerView.getMessageLabel().setText(
-                    "Не удалось изменить заказчика"
             );
         }
     }

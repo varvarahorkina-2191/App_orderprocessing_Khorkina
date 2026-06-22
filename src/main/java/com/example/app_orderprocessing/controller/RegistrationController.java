@@ -5,37 +5,79 @@ import com.example.app_orderprocessing.model.User;
 import com.example.app_orderprocessing.util.PasswordHasher;
 import com.example.app_orderprocessing.util.PasswordValidator;
 import com.example.app_orderprocessing.view.RegistrationView;
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 
-public class RegistrationController {
+public class RegistrationController implements EventHandler<ActionEvent> {
 
-    private RegistrationView view;
+    private RegistrationView registrationView;
     private UserDao userDao;
 
-    public RegistrationController(RegistrationView view) {
-        this.view = view;
-        this.userDao = new UserDao();
+    public RegistrationController(
+            RegistrationView registrationView
+    ) {
+        this.registrationView = registrationView;
 
-        view.getRegisterButton().setOnAction(event -> registerUser());
+        userDao = new UserDao();
+
+        registrationView.getRegisterButton().setOnAction(this);
+    }
+
+    @Override
+    public void handle(ActionEvent event) {
+        if (event.getSource()
+                == registrationView.getRegisterButton()) {
+
+            registerUser();
+        }
     }
 
     private void registerUser() {
-        String login = view.getLoginField().getText();
-        String password = view.getPasswordField().getText();
-        String repeatPassword = view.getRepeatPasswordField().getText();
+        String login =
+                registrationView.getLoginField().getText();
 
-        if (login.isEmpty() || password.isEmpty() || repeatPassword.isEmpty()) {
-            view.getMessageLabel().setText("Заполните все поля");
+        String password =
+                registrationView.getPasswordField().getText();
+
+        String repeatPassword =
+                registrationView
+                        .getRepeatPasswordField()
+                        .getText();
+
+        if (login.isEmpty()) {
+            registrationView.getMessageLabel().setText(
+                    "Введите логин"
+            );
             return;
         }
 
-        if (!password.equals(repeatPassword)) {
-            view.getMessageLabel().setText("Пароли не совпадают");
+        if (password.isEmpty()) {
+            registrationView.getMessageLabel().setText(
+                    "Введите пароль"
+            );
             return;
         }
 
-        if (!PasswordValidator.isValid(password)) {
-            view.getMessageLabel().setText(
-                    "Пароль должен содержать 8 символов, " +
+        if (repeatPassword.isEmpty()) {
+            registrationView.getMessageLabel().setText(
+                    "Повторите пароль"
+            );
+            return;
+        }
+
+        if (password.equals(repeatPassword) == false) {
+            registrationView.getMessageLabel().setText(
+                    "Пароли не совпадают"
+            );
+            return;
+        }
+
+        boolean passwordValid;
+        passwordValid = PasswordValidator.isValid(password);
+
+        if (passwordValid == false) {
+            registrationView.getMessageLabel().setText(
+                    "Пароль должен содержать минимум 8 символов, " +
                             "заглавную букву, цифру и специальный символ"
             );
             return;
@@ -44,43 +86,48 @@ public class RegistrationController {
         User oldUser = userDao.findByLogin(login);
 
         if (oldUser != null) {
-            view.getMessageLabel().setText("Такой логин уже существует");
+            registrationView.getMessageLabel().setText(
+                    "Такой логин уже существует"
+            );
             return;
         }
 
-        String hash = PasswordHasher.hash(password);
+        String hashPassword;
+        hashPassword = PasswordHasher.hash(password);
 
-        int managerRoleId = 2;
+        int roleId = 2;
 
         User newUser = new User(
-                managerRoleId,
+                roleId,
                 login,
-                hash
+                hashPassword
         );
 
-        boolean result = userDao.addUser(newUser);
+        boolean userAdded;
+        userAdded = userDao.addUser(newUser);
 
-        if (result) {
-            User savedUser = userDao.findByLogin(login);
-
-            if (savedUser != null) {
-                userDao.addUserRole(
-                        savedUser.getId(),
-                        managerRoleId
-                );
-            }
-
-            view.getMessageLabel().setText(
-                    "Регистрация выполнена"
-            );
-
-            view.getLoginField().clear();
-            view.getPasswordField().clear();
-            view.getRepeatPasswordField().clear();
-        } else {
-            view.getMessageLabel().setText(
+        if (userAdded == false) {
+            registrationView.getMessageLabel().setText(
                     "Ошибка регистрации"
             );
+            return;
         }
+
+        User savedUser = userDao.findByLogin(login);
+
+        if (savedUser != null) {
+            userDao.addUserRole(
+                    savedUser.getId(),
+                    roleId
+            );
+        }
+
+        registrationView.getMessageLabel().setText(
+                "Регистрация выполнена"
+        );
+
+        registrationView.getLoginField().clear();
+        registrationView.getPasswordField().clear();
+        registrationView.getRepeatPasswordField().clear();
     }
 }

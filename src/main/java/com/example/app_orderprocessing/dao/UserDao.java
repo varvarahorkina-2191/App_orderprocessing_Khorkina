@@ -13,7 +13,9 @@ public class UserDao {
     private Connection connection;
 
     public UserDao() {
-        connection = DatabaseConnection.getInstance().getConnection();
+        connection = DatabaseConnection
+                .getInstance()
+                .getConnection();
     }
 
     public User findByLogin(String login) {
@@ -24,16 +26,20 @@ public class UserDao {
                 """;
 
         try {
-            PreparedStatement statement = connection.prepareStatement(sql);
+            PreparedStatement statement;
+            statement = connection.prepareStatement(sql);
+
             statement.setString(1, login);
 
-            ResultSet result = statement.executeQuery();
+            ResultSet result;
+            result = statement.executeQuery();
 
             if (result.next()) {
                 int id = result.getInt("id");
                 int roleId = result.getInt("active_role_id");
                 String userLogin = result.getString("login");
-                String passwordHash = result.getString("hash_password");
+                String passwordHash =
+                        result.getString("hash_password");
 
                 User user = new User(
                         id,
@@ -52,7 +58,10 @@ public class UserDao {
             statement.close();
 
         } catch (SQLException e) {
-            System.out.println("Ошибка поиска пользователя");
+            System.out.println(
+                    "Ошибка при поиске пользователя"
+            );
+
             e.printStackTrace();
         }
 
@@ -67,13 +76,26 @@ public class UserDao {
                 """;
 
         try {
-            PreparedStatement statement = connection.prepareStatement(sql);
+            PreparedStatement statement;
+            statement = connection.prepareStatement(sql);
 
-            statement.setInt(1, user.getActiveRoleId());
-            statement.setString(2, user.getLogin());
-            statement.setString(3, user.getHashPassword());
+            statement.setInt(
+                    1,
+                    user.getActiveRoleId()
+            );
 
-            int result = statement.executeUpdate();
+            statement.setString(
+                    2,
+                    user.getLogin()
+            );
+
+            statement.setString(
+                    3,
+                    user.getHashPassword()
+            );
+
+            int result;
+            result = statement.executeUpdate();
 
             statement.close();
 
@@ -82,7 +104,10 @@ public class UserDao {
             }
 
         } catch (SQLException e) {
-            System.out.println("Ошибка добавления пользователя");
+            System.out.println(
+                    "Ошибка при добавлении пользователя"
+            );
+
             e.printStackTrace();
         }
 
@@ -97,12 +122,14 @@ public class UserDao {
                 """;
 
         try {
-            PreparedStatement statement = connection.prepareStatement(sql);
+            PreparedStatement statement;
+            statement = connection.prepareStatement(sql);
 
             statement.setInt(1, userId);
             statement.setInt(2, roleId);
 
-            int result = statement.executeUpdate();
+            int result;
+            result = statement.executeUpdate();
 
             statement.close();
 
@@ -111,7 +138,10 @@ public class UserDao {
             }
 
         } catch (SQLException e) {
-            System.out.println("Ошибка добавления роли");
+            System.out.println(
+                    "Ошибка при добавлении роли пользователю"
+            );
+
             e.printStackTrace();
         }
 

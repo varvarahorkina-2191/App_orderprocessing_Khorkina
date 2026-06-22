@@ -5,10 +5,27 @@ import org.mindrot.jbcrypt.BCrypt;
 public class PasswordHasher {
 
     public static String hash(String password) {
-        return BCrypt.hashpw(password, BCrypt.gensalt());
+        String hashPassword;
+
+        hashPassword = BCrypt.hashpw(
+                password,
+                BCrypt.gensalt()
+        );
+
+        return hashPassword;
     }
 
-    public static boolean check(String password, String hashPassword) {
-        return BCrypt.checkpw(password, hashPassword);
+    public static boolean check(
+            String password,
+            String hashPassword
+    ) {
+        boolean result;
+
+        result = BCrypt.checkpw(
+                password,
+                hashPassword
+        );
+
+        return result;
     }
 }

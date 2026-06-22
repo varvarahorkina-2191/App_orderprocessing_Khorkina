@@ -1,8 +1,8 @@
 package com.example.app_orderprocessing;
 
-import com.example.app_orderprocessing.controller.RegistrationController;
+import com.example.app_orderprocessing.controller.LoginController;
 import com.example.app_orderprocessing.database.DatabaseConnection;
-import com.example.app_orderprocessing.view.RegistrationView;
+import com.example.app_orderprocessing.view.LoginView;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
@@ -13,12 +13,20 @@ public class Main extends Application {
     public void start(Stage stage) {
         DatabaseConnection.getInstance();
 
-        RegistrationView view = new RegistrationView();
-        new RegistrationController(view);
+        LoginView loginView = new LoginView();
 
-        Scene scene = new Scene(view, 400, 350);
+        new LoginController(
+                loginView,
+                stage
+        );
 
-        stage.setTitle("Регистрация");
+        Scene scene = new Scene(
+                loginView,
+                400,
+                300
+        );
+
+        stage.setTitle("Авторизация");
         stage.setScene(scene);
         stage.show();
     }

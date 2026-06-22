@@ -75,13 +75,16 @@ public class LoginController implements EventHandler<ActionEvent> {
             return;
         }
 
-        openCustomers();
+        openCustomers(user);
     }
 
-    private void openCustomers() {
+    private void openCustomers(User user) {
         CustomerView customerView = new CustomerView();
 
-        new CustomerController(customerView);
+        new CustomerController(
+                customerView,
+                user
+        );
 
         Scene scene = new Scene(
                 customerView,
@@ -97,7 +100,9 @@ public class LoginController implements EventHandler<ActionEvent> {
         RegistrationView registrationView =
                 new RegistrationView();
 
-        new RegistrationController(registrationView);
+        new RegistrationController(
+                registrationView
+        );
 
         Scene scene = new Scene(
                 registrationView,

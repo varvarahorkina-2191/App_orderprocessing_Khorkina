@@ -2,6 +2,7 @@ package com.example.app_orderprocessing.controller;
 
 import com.example.app_orderprocessing.dao.CustomerDao;
 import com.example.app_orderprocessing.model.Customer;
+import com.example.app_orderprocessing.model.User;
 import com.example.app_orderprocessing.view.CustomerView;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
@@ -11,13 +12,19 @@ public class CustomerController {
 
     private CustomerDao customerDao;
     private CustomerView customerView;
+    private User user;
 
-    public CustomerController(CustomerView customerView) {
+    public CustomerController(
+            CustomerView customerView,
+            User user
+    ) {
         this.customerView = customerView;
+        this.user = user;
 
         customerDao = new CustomerDao();
 
         loadCustomers();
+        checkRole();
 
         customerView.getAddButton().setOnAction(
                 new EventHandler<ActionEvent>() {
@@ -54,6 +61,14 @@ public class CustomerController {
                     }
                 }
         );
+    }
+
+    private void checkRole() {
+        int roleId = user.getActiveRoleId();
+
+        if (roleId == 2) {
+            customerView.getDeleteButton().setDisable(true);
+        }
     }
 
     public void loadCustomers() {
@@ -141,7 +156,9 @@ public class CustomerController {
         selectedCustomer.setContactPerson(contact);
 
         boolean updated;
-        updated = customerDao.updateCustomer(selectedCustomer);
+        updated = customerDao.updateCustomer(
+                selectedCustomer
+        );
 
         if (updated == true) {
             customerView.getMessageLabel().setText(
@@ -158,6 +175,13 @@ public class CustomerController {
     }
 
     private void deleteCustomer() {
+        if (user.getActiveRoleId() == 2) {
+            customerView.getMessageLabel().setText(
+                    "У вас нет права на удаление"
+            );
+            return;
+        }
+
         Customer selectedCustomer;
 
         selectedCustomer = customerView

@@ -6,6 +6,7 @@ public class Document {
 
     private int id;
     private int customerId;
+    private String customerName;
     private String documentNumber;
     private LocalDate purchaseDate;
 
@@ -13,23 +14,25 @@ public class Document {
     }
 
     public Document(
-            int id,
             int customerId,
             String documentNumber,
             LocalDate purchaseDate
     ) {
-        this.id = id;
         this.customerId = customerId;
         this.documentNumber = documentNumber;
         this.purchaseDate = purchaseDate;
     }
 
     public Document(
+            int id,
             int customerId,
+            String customerName,
             String documentNumber,
             LocalDate purchaseDate
     ) {
+        this.id = id;
         this.customerId = customerId;
+        this.customerName = customerName;
         this.documentNumber = documentNumber;
         this.purchaseDate = purchaseDate;
     }
@@ -48,6 +51,14 @@ public class Document {
 
     public void setCustomerId(int customerId) {
         this.customerId = customerId;
+    }
+
+    public String getCustomerName() {
+        return customerName;
+    }
+
+    public void setCustomerName(String customerName) {
+        this.customerName = customerName;
     }
 
     public String getDocumentNumber() {

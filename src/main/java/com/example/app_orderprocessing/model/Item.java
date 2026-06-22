@@ -1,10 +1,12 @@
 package com.example.app_orderprocessing.model;
 
+import java.math.BigDecimal;
+
 public class Item {
 
     private int id;
     private String itemName;
-    private double price;
+    private BigDecimal price;
     private String itemInformation;
     private boolean hasDelivery;
 
@@ -12,13 +14,11 @@ public class Item {
     }
 
     public Item(
-            int id,
             String itemName,
-            double price,
+            BigDecimal price,
             String itemInformation,
             boolean hasDelivery
     ) {
-        this.id = id;
         this.itemName = itemName;
         this.price = price;
         this.itemInformation = itemInformation;
@@ -26,11 +26,13 @@ public class Item {
     }
 
     public Item(
+            int id,
             String itemName,
-            double price,
+            BigDecimal price,
             String itemInformation,
             boolean hasDelivery
     ) {
+        this.id = id;
         this.itemName = itemName;
         this.price = price;
         this.itemInformation = itemInformation;
@@ -53,11 +55,11 @@ public class Item {
         this.itemName = itemName;
     }
 
-    public double getPrice() {
+    public BigDecimal getPrice() {
         return price;
     }
 
-    public void setPrice(double price) {
+    public void setPrice(BigDecimal price) {
         this.price = price;
     }
 
@@ -70,6 +72,10 @@ public class Item {
     }
 
     public boolean isHasDelivery() {
+        return hasDelivery;
+    }
+
+    public boolean getHasDelivery() {
         return hasDelivery;
     }
 

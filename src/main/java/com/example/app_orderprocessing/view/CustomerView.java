@@ -1,6 +1,7 @@
 package com.example.app_orderprocessing.view;
 
 import com.example.app_orderprocessing.model.Customer;
+import javafx.geometry.Insets;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
@@ -24,12 +25,29 @@ public class CustomerView extends BorderPane {
     private Button addButton;
     private Button editButton;
     private Button deleteButton;
+    private Button profileButton;
+    private Button exitButton;
 
     private Label messageLabel;
 
     public CustomerView() {
+        createTop();
         createTable();
         createForm();
+    }
+
+    private void createTop() {
+        profileButton = new Button("Личный кабинет");
+        exitButton = new Button("Выйти");
+
+        HBox topButtons = new HBox(10);
+
+        topButtons.getChildren().add(profileButton);
+        topButtons.getChildren().add(exitButton);
+
+        topButtons.setPadding(new Insets(10));
+
+        setTop(topButtons);
     }
 
     private void createTable() {
@@ -102,6 +120,7 @@ public class CustomerView extends BorderPane {
         messageLabel = new Label();
 
         GridPane fields = new GridPane();
+
         fields.setHgap(10);
         fields.setVgap(10);
 
@@ -129,7 +148,7 @@ public class CustomerView extends BorderPane {
         bottom.getChildren().add(buttons);
         bottom.getChildren().add(messageLabel);
 
-        bottom.setStyle("-fx-padding: 10;");
+        bottom.setPadding(new Insets(10));
 
         setBottom(bottom);
     }
@@ -164,6 +183,14 @@ public class CustomerView extends BorderPane {
 
     public Button getDeleteButton() {
         return deleteButton;
+    }
+
+    public Button getProfileButton() {
+        return profileButton;
+    }
+
+    public Button getExitButton() {
+        return exitButton;
     }
 
     public Label getMessageLabel() {

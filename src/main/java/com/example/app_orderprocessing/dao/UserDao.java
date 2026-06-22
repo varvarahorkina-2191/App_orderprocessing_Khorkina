@@ -147,4 +147,85 @@ public class UserDao {
 
         return false;
     }
+
+    public boolean updateLogin(
+            int userId,
+            String newLogin
+    ) {
+        String sql = """
+                UPDATE users
+                SET login = ?
+                WHERE id = ?
+                """;
+
+        try {
+            PreparedStatement statement;
+            statement = connection.prepareStatement(sql);
+
+            statement.setString(1, newLogin);
+            statement.setInt(2, userId);
+
+            int result;
+            result = statement.executeUpdate();
+
+            statement.close();
+
+            if (result > 0) {
+                return true;
+            }
+
+        } catch (SQLException e) {
+            System.out.println(
+                    "Ошибка при изменении логина"
+            );
+
+            e.printStackTrace();
+        }
+
+        return false;
+    }
+
+    public boolean updatePassword(
+            int userId,
+            String newPasswordHash
+    ) {
+        String sql = """
+                UPDATE users
+                SET hash_password = ?
+                WHERE id = ?
+                """;
+
+        try {
+            PreparedStatement statement;
+            statement = connection.prepareStatement(sql);
+
+            statement.setString(
+                    1,
+                    newPasswordHash
+            );
+
+            statement.setInt(
+                    2,
+                    userId
+            );
+
+            int result;
+            result = statement.executeUpdate();
+
+            statement.close();
+
+            if (result > 0) {
+                return true;
+            }
+
+        } catch (SQLException e) {
+            System.out.println(
+                    "Ошибка при изменении пароля"
+            );
+
+            e.printStackTrace();
+        }
+
+        return false;
+    }
 }

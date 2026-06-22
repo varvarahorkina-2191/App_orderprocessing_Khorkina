@@ -35,7 +35,9 @@ public class ActiveRoleController
 
         loadRoles();
 
-        activeRoleView.getContinueButton().setOnAction(this);
+        activeRoleView
+                .getContinueButton()
+                .setOnAction(this);
     }
 
     @Override
@@ -48,7 +50,9 @@ public class ActiveRoleController
     }
 
     private void loadRoles() {
-        roles = roleDao.getUserRoles(user.getId());
+        roles = roleDao.getUserRoles(
+                user.getId()
+        );
 
         int i = 0;
 
@@ -64,9 +68,15 @@ public class ActiveRoleController
         }
 
         if (roles.isEmpty()) {
-            activeRoleView.getMessageLabel().setText(
-                    "Пользователю не назначены роли"
-            );
+            activeRoleView
+                    .getMessageLabel()
+                    .setText(
+                            "Пользователю не назначены роли"
+                    );
+
+            activeRoleView
+                    .getContinueButton()
+                    .setDisable(true);
         }
     }
 
@@ -78,9 +88,9 @@ public class ActiveRoleController
                 .getValue();
 
         if (roleName == null) {
-            activeRoleView.getMessageLabel().setText(
-                    "Выберите роль"
-            );
+            activeRoleView
+                    .getMessageLabel()
+                    .setText("Выберите роль");
 
             return;
         }
@@ -100,9 +110,9 @@ public class ActiveRoleController
         }
 
         if (selectedRole == null) {
-            activeRoleView.getMessageLabel().setText(
-                    "Роль не найдена"
-            );
+            activeRoleView
+                    .getMessageLabel()
+                    .setText("Роль не найдена");
 
             return;
         }
@@ -115,24 +125,30 @@ public class ActiveRoleController
         );
 
         if (updated == false) {
-            activeRoleView.getMessageLabel().setText(
-                    "Не удалось выбрать роль"
-            );
+            activeRoleView
+                    .getMessageLabel()
+                    .setText(
+                            "Не удалось выбрать роль"
+                    );
 
             return;
         }
 
-        user.setActiveRoleId(selectedRole.getId());
+        user.setActiveRoleId(
+                selectedRole.getId()
+        );
 
         openCustomers();
     }
 
     private void openCustomers() {
-        CustomerView customerView = new CustomerView();
+        CustomerView customerView =
+                new CustomerView();
 
         new CustomerController(
                 customerView,
-                user
+                user,
+                stage
         );
 
         Scene scene = new Scene(

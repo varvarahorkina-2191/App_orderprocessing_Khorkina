@@ -33,41 +33,51 @@ public class CustomerView extends BorderPane {
     }
 
     private void createTable() {
-        customerTable = new TableView<>();
+        customerTable = new TableView<Customer>();
 
         TableColumn<Customer, Integer> idColumn =
-                new TableColumn<>("ID");
+                new TableColumn<Customer, Integer>("ID");
 
         idColumn.setCellValueFactory(
-                new PropertyValueFactory<>("id")
+                new PropertyValueFactory<Customer, Integer>("id")
         );
 
         TableColumn<Customer, String> nameColumn =
-                new TableColumn<>("Заказчик");
+                new TableColumn<Customer, String>("Заказчик");
 
         nameColumn.setCellValueFactory(
-                new PropertyValueFactory<>("customerName")
+                new PropertyValueFactory<Customer, String>(
+                        "customerName"
+                )
         );
 
         TableColumn<Customer, String> addressColumn =
-                new TableColumn<>("Адрес");
+                new TableColumn<Customer, String>("Адрес");
 
         addressColumn.setCellValueFactory(
-                new PropertyValueFactory<>("address")
+                new PropertyValueFactory<Customer, String>(
+                        "address"
+                )
         );
 
         TableColumn<Customer, String> phoneColumn =
-                new TableColumn<>("Телефон");
+                new TableColumn<Customer, String>("Телефон");
 
         phoneColumn.setCellValueFactory(
-                new PropertyValueFactory<>("phoneNumber")
+                new PropertyValueFactory<Customer, String>(
+                        "phoneNumber"
+                )
         );
 
         TableColumn<Customer, String> contactColumn =
-                new TableColumn<>("Контактное лицо");
+                new TableColumn<Customer, String>(
+                        "Контактное лицо"
+                );
 
         contactColumn.setCellValueFactory(
-                new PropertyValueFactory<>("contactPerson")
+                new PropertyValueFactory<Customer, String>(
+                        "contactPerson"
+                )
         );
 
         customerTable.getColumns().add(idColumn);
@@ -108,11 +118,13 @@ public class CustomerView extends BorderPane {
         fields.add(contactField, 3, 1);
 
         HBox buttons = new HBox(10);
+
         buttons.getChildren().add(addButton);
         buttons.getChildren().add(editButton);
         buttons.getChildren().add(deleteButton);
 
         VBox bottom = new VBox(10);
+
         bottom.getChildren().add(fields);
         bottom.getChildren().add(buttons);
         bottom.getChildren().add(messageLabel);

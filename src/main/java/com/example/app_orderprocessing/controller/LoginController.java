@@ -3,7 +3,7 @@ package com.example.app_orderprocessing.controller;
 import com.example.app_orderprocessing.dao.UserDao;
 import com.example.app_orderprocessing.model.User;
 import com.example.app_orderprocessing.util.PasswordHasher;
-import com.example.app_orderprocessing.view.CustomerView;
+import com.example.app_orderprocessing.view.ActiveRoleView;
 import com.example.app_orderprocessing.view.LoginView;
 import com.example.app_orderprocessing.view.RegistrationView;
 import javafx.event.ActionEvent;
@@ -17,7 +17,10 @@ public class LoginController implements EventHandler<ActionEvent> {
     private UserDao userDao;
     private Stage stage;
 
-    public LoginController(LoginView loginView, Stage stage) {
+    public LoginController(
+            LoginView loginView,
+            Stage stage
+    ) {
         this.loginView = loginView;
         this.stage = stage;
 
@@ -39,16 +42,27 @@ public class LoginController implements EventHandler<ActionEvent> {
     }
 
     private void login() {
-        String login = loginView.getLoginField().getText();
-        String password = loginView.getPasswordField().getText();
+        String login = loginView
+                .getLoginField()
+                .getText();
+
+        String password = loginView
+                .getPasswordField()
+                .getText();
 
         if (login.isEmpty()) {
-            loginView.getMessageLabel().setText("Введите логин");
+            loginView.getMessageLabel().setText(
+                    "Введите логин"
+            );
+
             return;
         }
 
         if (password.isEmpty()) {
-            loginView.getMessageLabel().setText("Введите пароль");
+            loginView.getMessageLabel().setText(
+                    "Введите пароль"
+            );
+
             return;
         }
 
@@ -58,6 +72,7 @@ public class LoginController implements EventHandler<ActionEvent> {
             loginView.getMessageLabel().setText(
                     "Пользователь не найден"
             );
+
             return;
         }
 
@@ -72,27 +87,30 @@ public class LoginController implements EventHandler<ActionEvent> {
             loginView.getMessageLabel().setText(
                     "Неверный пароль"
             );
+
             return;
         }
 
-        openCustomers(user);
+        openActiveRole(user);
     }
 
-    private void openCustomers(User user) {
-        CustomerView customerView = new CustomerView();
+    private void openActiveRole(User user) {
+        ActiveRoleView activeRoleView =
+                new ActiveRoleView();
 
-        new CustomerController(
-                customerView,
-                user
+        new ActiveRoleController(
+                activeRoleView,
+                user,
+                stage
         );
 
         Scene scene = new Scene(
-                customerView,
-                900,
-                500
+                activeRoleView,
+                350,
+                250
         );
 
-        stage.setTitle("Заказчики");
+        stage.setTitle("Выбор активной роли");
         stage.setScene(scene);
     }
 

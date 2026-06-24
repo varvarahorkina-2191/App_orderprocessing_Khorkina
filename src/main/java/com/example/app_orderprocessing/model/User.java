@@ -10,14 +10,14 @@ public class User {
     public User() {
     }
 
-    public User(int id, int activeRoleId, String login, String hashPassword) {
-        this.id = id;
+    public User(int activeRoleId, String login, String hashPassword) {
         this.activeRoleId = activeRoleId;
         this.login = login;
         this.hashPassword = hashPassword;
     }
 
-    public User(int activeRoleId, String login, String hashPassword) {
+    public User(int id, int activeRoleId, String login, String hashPassword) {
+        this.id = id;
         this.activeRoleId = activeRoleId;
         this.login = login;
         this.hashPassword = hashPassword;

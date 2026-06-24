@@ -5,12 +5,15 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 
 public class PersonalAccView extends VBox {
 
     private TextField loginField;
-    private PasswordField passwordField;
+
+    private PasswordField currentPasswordField;
+    private PasswordField newPasswordField;
     private PasswordField repeatPasswordField;
 
     private Button saveButton;
@@ -19,43 +22,50 @@ public class PersonalAccView extends VBox {
     private Label messageLabel;
 
     public PersonalAccView() {
-        Label titleLabel = new Label("Личный кабинет");
+        Label title = new Label("Личный кабинет");
 
-        Label loginLabel = new Label("Логин:");
-
+        Label loginText = new Label("Логин:");
         loginField = new TextField();
-        loginField.setPromptText("Введите новый логин");
+        loginField.setPromptText("Введите логин");
 
-        Label passwordLabel = new Label("Новый пароль:");
+        Label currentPasswordText = new Label("Текущий пароль:");
+        currentPasswordField = new PasswordField();
+        currentPasswordField.setPromptText("Введите текущий пароль");
 
-        passwordField = new PasswordField();
-        passwordField.setPromptText("Введите новый пароль");
+        Label newPasswordText = new Label("Новый пароль:");
+        newPasswordField = new PasswordField();
+        newPasswordField.setPromptText("Введите новый пароль");
 
-        Label repeatPasswordLabel =
-                new Label("Повторите новый пароль:");
-
+        Label repeatPasswordText = new Label("Повторите новый пароль:");
         repeatPasswordField = new PasswordField();
-        repeatPasswordField.setPromptText(
-                "Повторите новый пароль"
-        );
+        repeatPasswordField.setPromptText("Повторите новый пароль");
 
         saveButton = new Button("Сохранить");
         backButton = new Button("Назад");
 
+        saveButton.setPrefWidth(130);
+        backButton.setPrefWidth(130);
+
+        HBox buttons = new HBox(10);
+        buttons.getChildren().add(saveButton);
+        buttons.getChildren().add(backButton);
+
         messageLabel = new Label();
+        messageLabel.setWrapText(true);
 
         setSpacing(10);
         setPadding(new Insets(20));
 
-        getChildren().add(titleLabel);
-        getChildren().add(loginLabel);
+        getChildren().add(title);
+        getChildren().add(loginText);
         getChildren().add(loginField);
-        getChildren().add(passwordLabel);
-        getChildren().add(passwordField);
-        getChildren().add(repeatPasswordLabel);
+        getChildren().add(currentPasswordText);
+        getChildren().add(currentPasswordField);
+        getChildren().add(newPasswordText);
+        getChildren().add(newPasswordField);
+        getChildren().add(repeatPasswordText);
         getChildren().add(repeatPasswordField);
-        getChildren().add(saveButton);
-        getChildren().add(backButton);
+        getChildren().add(buttons);
         getChildren().add(messageLabel);
     }
 
@@ -63,8 +73,12 @@ public class PersonalAccView extends VBox {
         return loginField;
     }
 
-    public PasswordField getPasswordField() {
-        return passwordField;
+    public PasswordField getCurrentPasswordField() {
+        return currentPasswordField;
+    }
+
+    public PasswordField getNewPasswordField() {
+        return newPasswordField;
     }
 
     public PasswordField getRepeatPasswordField() {

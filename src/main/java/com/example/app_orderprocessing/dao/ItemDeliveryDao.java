@@ -1,6 +1,7 @@
 package com.example.app_orderprocessing.dao;
 
 import com.example.app_orderprocessing.database.DatabaseConnection;
+import com.example.app_orderprocessing.model.DeliveryMethod;
 import com.example.app_orderprocessing.model.ItemDelivery;
 
 import java.sql.Connection;
@@ -14,212 +15,154 @@ public class ItemDeliveryDao {
     private Connection connection;
 
     public ItemDeliveryDao() {
-        connection = DatabaseConnection
-                .getInstance()
-                .getConnection();
+        connection = DatabaseConnection.getInstance().getConnection();
     }
 
     public ArrayList<ItemDelivery> getAllItemDeliveries() {
-        ArrayList<ItemDelivery> itemDeliveries =
-                new ArrayList<ItemDelivery>();
+        ArrayList<ItemDelivery> itemDeliveries = new ArrayList<ItemDelivery>();
 
         String sql = """
-                SELECT item_delivery.item_id,
-                       item_delivery.delivery_id,
-                       items.item_name,
-                       delivery_methods.name AS delivery_name
+                SELECT item_delivery.item_id, item_delivery.delivery_id,
+                       items.item_name, delivery_methods.name AS delivery_name
                 FROM item_delivery
-                INNER JOIN items
-                    ON item_delivery.item_id = items.id
-                INNER JOIN delivery_methods
-                    ON item_delivery.delivery_id = delivery_methods.id
-                ORDER BY items.item_name,
-                         delivery_methods.name
+                JOIN items ON item_delivery.item_id = items.id
+                JOIN delivery_methods ON item_delivery.delivery_id = delivery_methods.id
+                ORDER BY items.item_name, delivery_methods.name
                 """;
 
         try {
-            PreparedStatement statement;
-            statement = connection.prepareStatement(sql);
-
-            ResultSet result;
-            result = statement.executeQuery();
+            PreparedStatement statement = connection.prepareStatement(sql);
+            ResultSet result = statement.executeQuery();
 
             while (result.next()) {
-                int itemId =
-                        result.getInt("item_id");
-
-                int deliveryId =
-                        result.getInt("delivery_id");
-
-                String itemName =
-                        result.getString("item_name");
-
-                String deliveryName =
-                        result.getString("delivery_name");
-
-                ItemDelivery itemDelivery =
-                        new ItemDelivery(
-                                itemId,
-                                deliveryId,
-                                itemName,
-                                deliveryName
-                        );
+                ItemDelivery itemDelivery = new ItemDelivery(
+                        result.getInt("item_id"),
+                        result.getInt("delivery_id"),
+                        result.getString("item_name"),
+                        result.getString("delivery_name")
+                );
 
                 itemDeliveries.add(itemDelivery);
             }
 
             result.close();
             statement.close();
-
         } catch (SQLException e) {
-            System.out.println(
-                    "Ошибка при получении способов доставки товаров"
-            );
-
+            System.out.println("Ошибка при получении способов доставки товаров");
             e.printStackTrace();
         }
 
         return itemDeliveries;
     }
 
-    public boolean addItemDelivery(
-            ItemDelivery itemDelivery
-    ) {
+    public ArrayList<DeliveryMethod> getDeliveryMethodsByItemId(int itemId) {
+        ArrayList<DeliveryMethod> deliveryMethods = new ArrayList<DeliveryMethod>();
+
         String sql = """
-                INSERT INTO item_delivery
-                (item_id, delivery_id)
+                SELECT delivery_methods.id, delivery_methods.name,
+                       delivery_methods.basic_price, delivery_methods.delivery_speed
+                FROM delivery_methods
+                JOIN item_delivery ON delivery_methods.id = item_delivery.delivery_id
+                WHERE item_delivery.item_id = ?
+                ORDER BY delivery_methods.name
+                """;
+
+        try {
+            PreparedStatement statement = connection.prepareStatement(sql);
+            statement.setInt(1, itemId);
+
+            ResultSet result = statement.executeQuery();
+
+            while (result.next()) {
+                DeliveryMethod deliveryMethod = new DeliveryMethod(
+                        result.getInt("id"),
+                        result.getString("name"),
+                        result.getBigDecimal("basic_price"),
+                        result.getString("delivery_speed")
+                );
+
+                deliveryMethods.add(deliveryMethod);
+            }
+
+            result.close();
+            statement.close();
+        } catch (SQLException e) {
+            System.out.println("Ошибка при получении способов доставки выбранного товара");
+            e.printStackTrace();
+        }
+
+        return deliveryMethods;
+    }
+
+    public boolean addItemDelivery(ItemDelivery itemDelivery) {
+        String sql = """
+                INSERT INTO item_delivery (item_id, delivery_id)
                 VALUES (?, ?)
                 """;
 
         try {
-            PreparedStatement statement;
-            statement = connection.prepareStatement(sql);
+            PreparedStatement statement = connection.prepareStatement(sql);
 
-            statement.setInt(
-                    1,
-                    itemDelivery.getItemId()
-            );
+            statement.setInt(1, itemDelivery.getItemId());
+            statement.setInt(2, itemDelivery.getDeliveryId());
 
-            statement.setInt(
-                    2,
-                    itemDelivery.getDeliveryId()
-            );
-
-            int result;
-            result = statement.executeUpdate();
-
+            int result = statement.executeUpdate();
             statement.close();
 
-            if (result > 0) {
-                return true;
-            }
-
+            return result > 0;
         } catch (SQLException e) {
-            System.out.println(
-                    "Ошибка при назначении способа доставки товару"
-            );
-
+            System.out.println("Ошибка при назначении способа доставки товару");
             e.printStackTrace();
         }
 
         return false;
     }
 
-    public boolean updateItemDelivery(
-            ItemDelivery itemDelivery,
-            int oldItemId,
-            int oldDeliveryId
-    ) {
+    public boolean updateItemDelivery(ItemDelivery itemDelivery, int oldItemId, int oldDeliveryId) {
         String sql = """
                 UPDATE item_delivery
-                SET item_id = ?,
-                    delivery_id = ?
-                WHERE item_id = ?
-                  AND delivery_id = ?
+                SET item_id = ?, delivery_id = ?
+                WHERE item_id = ? AND delivery_id = ?
                 """;
 
         try {
-            PreparedStatement statement;
-            statement = connection.prepareStatement(sql);
+            PreparedStatement statement = connection.prepareStatement(sql);
 
-            statement.setInt(
-                    1,
-                    itemDelivery.getItemId()
-            );
+            statement.setInt(1, itemDelivery.getItemId());
+            statement.setInt(2, itemDelivery.getDeliveryId());
+            statement.setInt(3, oldItemId);
+            statement.setInt(4, oldDeliveryId);
 
-            statement.setInt(
-                    2,
-                    itemDelivery.getDeliveryId()
-            );
-
-            statement.setInt(
-                    3,
-                    oldItemId
-            );
-
-            statement.setInt(
-                    4,
-                    oldDeliveryId
-            );
-
-            int result;
-            result = statement.executeUpdate();
-
+            int result = statement.executeUpdate();
             statement.close();
 
-            if (result > 0) {
-                return true;
-            }
-
+            return result > 0;
         } catch (SQLException e) {
-            System.out.println(
-                    "Ошибка при изменении способа доставки товара"
-            );
-
+            System.out.println("Ошибка при изменении способа доставки товара");
             e.printStackTrace();
         }
 
         return false;
     }
 
-    public boolean deleteItemDelivery(
-            int itemId,
-            int deliveryId
-    ) {
+    public boolean deleteItemDelivery(int itemId, int deliveryId) {
         String sql = """
                 DELETE FROM item_delivery
-                WHERE item_id = ?
-                  AND delivery_id = ?
+                WHERE item_id = ? AND delivery_id = ?
                 """;
 
         try {
-            PreparedStatement statement;
-            statement = connection.prepareStatement(sql);
+            PreparedStatement statement = connection.prepareStatement(sql);
 
-            statement.setInt(
-                    1,
-                    itemId
-            );
+            statement.setInt(1, itemId);
+            statement.setInt(2, deliveryId);
 
-            statement.setInt(
-                    2,
-                    deliveryId
-            );
-
-            int result;
-            result = statement.executeUpdate();
-
+            int result = statement.executeUpdate();
             statement.close();
 
-            if (result > 0) {
-                return true;
-            }
-
+            return result > 0;
         } catch (SQLException e) {
-            System.out.println(
-                    "Ошибка при удалении способа доставки товара"
-            );
-
+            System.out.println("Ошибка при удалении способа доставки товара");
             e.printStackTrace();
         }
 

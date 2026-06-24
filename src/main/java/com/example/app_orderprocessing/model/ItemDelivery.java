@@ -11,20 +11,12 @@ public class ItemDelivery {
     public ItemDelivery() {
     }
 
-    public ItemDelivery(
-            int itemId,
-            int deliveryId
-    ) {
+    public ItemDelivery(int itemId, int deliveryId) {
         this.itemId = itemId;
         this.deliveryId = deliveryId;
     }
 
-    public ItemDelivery(
-            int itemId,
-            int deliveryId,
-            String itemName,
-            String deliveryName
-    ) {
+    public ItemDelivery(int itemId, int deliveryId, String itemName, String deliveryName) {
         this.itemId = itemId;
         this.deliveryId = deliveryId;
         this.itemName = itemName;

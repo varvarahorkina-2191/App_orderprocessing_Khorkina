@@ -4,205 +4,179 @@ import com.example.app_orderprocessing.dao.UserDao;
 import com.example.app_orderprocessing.model.User;
 import com.example.app_orderprocessing.util.PasswordHasher;
 import com.example.app_orderprocessing.util.PasswordValidator;
-import com.example.app_orderprocessing.view.CustomerView;
+import com.example.app_orderprocessing.view.MainMenuView;
 import com.example.app_orderprocessing.view.PersonalAccView;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
-import javafx.scene.Scene;
-import javafx.stage.Stage;
 
-public class PersonalAccController
-        implements EventHandler<ActionEvent> {
+public class PersonalAccController implements EventHandler<ActionEvent> {
 
-    private PersonalAccView personalAccView;
+    private PersonalAccView view;
     private UserDao userDao;
     private User user;
-    private Stage stage;
+    private MainMenuView mainMenuView;
 
-    public PersonallAccController(
-            PersonalAccView personalAccView,
+    public PersonalAccController(
+            PersonalAccView view,
             User user,
-            Stage stage
+            MainMenuView mainMenuView
     ) {
-        this.personalAccView = personalAccView;
+        this.view = view;
         this.user = user;
-        this.stage = stage;
+        this.mainMenuView = mainMenuView;
 
         userDao = new UserDao();
 
-        personalAccView
-                .getLoginField()
-                .setText(user.getLogin());
-
-        personalAccView
-                .getSaveButton()
-                .setOnAction(this);
-
-        personalAccView
-                .getBackButton()
-                .setOnAction(this);
+        view.getLoginField().setText(user.getLogin());
+        view.getSaveButton().setOnAction(this);
+        view.getBackButton().setOnAction(this);
     }
 
     @Override
     public void handle(ActionEvent event) {
-        if (event.getSource()
-                == personalAccView.getSaveButton()) {
+        Object source = event.getSource();
 
+        if (source == view.getSaveButton()) {
             saveUserData();
-        }
-
-        if (event.getSource()
-                == personalAccView.getBackButton()) {
-
-            openCustomers();
+        } else if (source == view.getBackButton()) {
+            mainMenuView.showWelcome();
         }
     }
 
     private void saveUserData() {
-        String newLogin =
-                personalAccView
-                        .getLoginField()
-                        .getText();
-
-        String newPassword =
-                personalAccView
-                        .getPasswordField()
-                        .getText();
-
-        String repeatPassword =
-                personalAccView
-                        .getRepeatPasswordField()
-                        .getText();
+        String newLogin = view.getLoginField().getText().trim();
+        String currentPassword = view.getCurrentPasswordField().getText();
+        String newPassword = view.getNewPasswordField().getText();
+        String repeatPassword = view.getRepeatPasswordField().getText();
 
         if (newLogin.isEmpty()) {
-            personalAccView
-                    .getMessageLabel()
-                    .setText("Введите логин");
-
+            showMessage("Введите логин");
             return;
         }
 
-        User foundUser =
-                userDao.findByLogin(newLogin);
-
-        if (foundUser != null
-                && foundUser.getId() != user.getId()) {
-
-            personalAccView
-                    .getMessageLabel()
-                    .setText("Такой логин уже существует");
-
+        if (newLogin.length() < 4) {
+            showMessage("Логин должен содержать минимум 4 символа");
             return;
         }
 
-        if (newPassword.isEmpty() == false
-                || repeatPassword.isEmpty() == false) {
+        if (newLogin.contains(" ")) {
+            showMessage("Логин не должен содержать пробелы");
+            return;
+        }
 
-            if (newPassword.isEmpty()
-                    || repeatPassword.isEmpty()) {
+        User foundUser = userDao.findByLogin(newLogin);
 
-                personalAccView
-                        .getMessageLabel()
-                        .setText("Заполните оба поля пароля");
+        if (foundUser != null && foundUser.getId() != user.getId()) {
+            showMessage("Такой логин уже существует");
+            return;
+        }
 
-                return;
-            }
+        boolean changeLogin = newLogin.equals(user.getLogin()) == false;
+        boolean changePassword = currentPassword.isEmpty() == false
+                || newPassword.isEmpty() == false
+                || repeatPassword.isEmpty() == false;
 
-            if (newPassword.equals(repeatPassword) == false) {
-                personalAccView
-                        .getMessageLabel()
-                        .setText("Пароли не совпадают");
+        if (changePassword && checkPasswordData(
+                currentPassword,
+                newPassword,
+                repeatPassword
+        ) == false) {
+            return;
+        }
 
-                return;
-            }
+        if (changeLogin == false && changePassword == false) {
+            showMessage("Изменений нет");
+            return;
+        }
 
-            boolean passwordValid;
+        boolean loginChanged = true;
+        boolean passwordChanged = true;
 
-            passwordValid =
-                    PasswordValidator.isValid(newPassword);
+        if (changeLogin) {
+            loginChanged = userDao.updateLogin(user.getId(), newLogin);
+        }
 
-            if (passwordValid == false) {
-                personalAccView
-                        .getMessageLabel()
-                        .setText(
-                                "Пароль должен содержать минимум 8 символов, " +
-                                        "заглавную букву, цифру и специальный символ"
-                        );
+        if (changePassword) {
+            String hash = PasswordHasher.hash(newPassword);
+            passwordChanged = userDao.updatePassword(user.getId(), hash);
 
-                return;
+            if (passwordChanged) {
+                user.setHashPassword(hash);
             }
         }
 
-        boolean loginChanged = false;
-        boolean passwordChanged = false;
-
-        if (newLogin.equals(user.getLogin()) == false) {
-            loginChanged = userDao.updateLogin(
-                    user.getId(),
-                    newLogin
-            );
-
-            if (loginChanged == true) {
+        if (loginChanged && passwordChanged) {
+            if (changeLogin) {
                 user.setLogin(newLogin);
+                mainMenuView.getUserLabel().setText(
+                        "Пользователь: " + user.getLogin()
+                );
             }
-        }
 
-        if (newPassword.isEmpty() == false) {
-            String passwordHash;
-
-            passwordHash =
-                    PasswordHasher.hash(newPassword);
-
-            passwordChanged =
-                    userDao.updatePassword(
-                            user.getId(),
-                            passwordHash
-                    );
-
-            if (passwordChanged == true) {
-                user.setHashPassword(passwordHash);
-            }
-        }
-
-        if (loginChanged == true
-                || passwordChanged == true) {
-
-            personalAccView
-                    .getMessageLabel()
-                    .setText("Данные изменены");
-
-            personalAccView
-                    .getPasswordField()
-                    .clear();
-
-            personalAccView
-                    .getRepeatPasswordField()
-                    .clear();
-
+            clearPasswordFields();
+            showMessage("Данные успешно изменены");
         } else {
-            personalAccView
-                    .getMessageLabel()
-                    .setText("Изменений нет");
+            showMessage("Не удалось изменить данные");
         }
     }
 
-    private void openCustomers() {
-        CustomerView customerView =
-                new CustomerView();
+    private boolean checkPasswordData(
+            String currentPassword,
+            String newPassword,
+            String repeatPassword
+    ) {
+        if (currentPassword.isEmpty()
+                || newPassword.isEmpty()
+                || repeatPassword.isEmpty()) {
 
-        new CustomerController(
-                customerView,
-                user,
-                stage
-        );
+            showMessage("Заполните все поля пароля");
+            return false;
+        }
 
-        Scene scene = new Scene(
-                customerView,
-                900,
-                500
-        );
+        boolean passwordCorrect;
 
-        stage.setTitle("Заказчики");
-        stage.setScene(scene);
+        try {
+            passwordCorrect = PasswordHasher.check(
+                    currentPassword,
+                    user.getHashPassword()
+            );
+        } catch (IllegalArgumentException e) {
+            passwordCorrect = false;
+        }
+
+        if (passwordCorrect == false) {
+            showMessage("Текущий пароль указан неверно");
+            return false;
+        }
+
+        if (newPassword.equals(repeatPassword) == false) {
+            showMessage("Новые пароли не совпадают");
+            return false;
+        }
+
+        if (PasswordValidator.isValid(newPassword) == false) {
+            showMessage(
+                    "Пароль должен содержать минимум 8 символов, "
+                            + "заглавную букву, цифру и специальный символ"
+            );
+            return false;
+        }
+
+        if (PasswordHasher.check(newPassword, user.getHashPassword())) {
+            showMessage("Новый пароль совпадает с текущим");
+            return false;
+        }
+
+        return true;
+    }
+
+    private void clearPasswordFields() {
+        view.getCurrentPasswordField().clear();
+        view.getNewPasswordField().clear();
+        view.getRepeatPasswordField().clear();
+    }
+
+    private void showMessage(String text) {
+        view.getMessageLabel().setText(text);
     }
 }

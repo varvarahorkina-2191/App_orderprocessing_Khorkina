@@ -17,10 +17,7 @@ public class LoginController implements EventHandler<ActionEvent> {
     private UserDao userDao;
     private Stage stage;
 
-    public LoginController(
-            LoginView loginView,
-            Stage stage
-    ) {
+    public LoginController(LoginView loginView, Stage stage) {
         this.loginView = loginView;
         this.stage = stage;
 
@@ -32,62 +29,40 @@ public class LoginController implements EventHandler<ActionEvent> {
 
     @Override
     public void handle(ActionEvent event) {
-        if (event.getSource() == loginView.getLoginButton()) {
-            login();
-        }
+        Object source = event.getSource();
 
-        if (event.getSource() == loginView.getRegistrationButton()) {
+        if (source == loginView.getLoginButton()) {
+            login();
+        } else if (source == loginView.getRegistrationButton()) {
             openRegistration();
         }
     }
 
     private void login() {
-        String login = loginView
-                .getLoginField()
-                .getText();
-
-        String password = loginView
-                .getPasswordField()
-                .getText();
+        String login = loginView.getLoginField().getText().trim();
+        String password = loginView.getPasswordField().getText();
 
         if (login.isEmpty()) {
-            loginView.getMessageLabel().setText(
-                    "Введите логин"
-            );
-
+            showMessage("Введите логин");
             return;
         }
 
         if (password.isEmpty()) {
-            loginView.getMessageLabel().setText(
-                    "Введите пароль"
-            );
-
+            showMessage("Введите пароль");
             return;
         }
 
         User user = userDao.findByLogin(login);
 
         if (user == null) {
-            loginView.getMessageLabel().setText(
-                    "Пользователь не найден"
-            );
-
+            showMessage("Неверный логин или пароль");
             return;
         }
 
-        boolean passwordCorrect;
-
-        passwordCorrect = PasswordHasher.check(
-                password,
-                user.getHashPassword()
-        );
+        boolean passwordCorrect = PasswordHasher.check(password, user.getHashPassword());
 
         if (passwordCorrect == false) {
-            loginView.getMessageLabel().setText(
-                    "Неверный пароль"
-            );
-
+            showMessage("Неверный логин или пароль");
             return;
         }
 
@@ -95,40 +70,30 @@ public class LoginController implements EventHandler<ActionEvent> {
     }
 
     private void openActiveRole(User user) {
-        ActiveRoleView activeRoleView =
-                new ActiveRoleView();
+        ActiveRoleView view = new ActiveRoleView();
+        new ActiveRoleController(view, user, stage);
 
-        new ActiveRoleController(
-                activeRoleView,
-                user,
-                stage
-        );
-
-        Scene scene = new Scene(
-                activeRoleView,
-                350,
-                250
-        );
+        Scene scene = new Scene(view, 350, 250);
 
         stage.setTitle("Выбор активной роли");
         stage.setScene(scene);
+        stage.setResizable(false);
+        stage.centerOnScreen();
     }
 
     private void openRegistration() {
-        RegistrationView registrationView =
-                new RegistrationView();
+        RegistrationView view = new RegistrationView();
+        new RegistrationController(view, stage);
 
-        new RegistrationController(
-                registrationView
-        );
-
-        Scene scene = new Scene(
-                registrationView,
-                400,
-                350
-        );
+        Scene scene = new Scene(view, 400, 430);
 
         stage.setTitle("Регистрация");
         stage.setScene(scene);
+        stage.setResizable(false);
+        stage.centerOnScreen();
+    }
+
+    private void showMessage(String text) {
+        loginView.getMessageLabel().setText(text);
     }
 }

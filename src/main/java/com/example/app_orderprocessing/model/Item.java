@@ -13,25 +13,14 @@ public class Item {
     public Item() {
     }
 
-    public Item(
-            String itemName,
-            BigDecimal price,
-            String itemInformation,
-            boolean hasDelivery
-    ) {
+    public Item(String itemName, BigDecimal price, String itemInformation, boolean hasDelivery) {
         this.itemName = itemName;
         this.price = price;
         this.itemInformation = itemInformation;
         this.hasDelivery = hasDelivery;
     }
 
-    public Item(
-            int id,
-            String itemName,
-            BigDecimal price,
-            String itemInformation,
-            boolean hasDelivery
-    ) {
+    public Item(int id, String itemName, BigDecimal price, String itemInformation, boolean hasDelivery) {
         this.id = id;
         this.itemName = itemName;
         this.price = price;

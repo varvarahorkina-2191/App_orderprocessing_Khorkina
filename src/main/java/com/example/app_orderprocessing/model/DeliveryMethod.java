@@ -12,22 +12,13 @@ public class DeliveryMethod {
     public DeliveryMethod() {
     }
 
-    public DeliveryMethod(
-            String name,
-            BigDecimal basicPrice,
-            String deliverySpeed
-    ) {
+    public DeliveryMethod(String name, BigDecimal basicPrice, String deliverySpeed) {
         this.name = name;
         this.basicPrice = basicPrice;
         this.deliverySpeed = deliverySpeed;
     }
 
-    public DeliveryMethod(
-            int id,
-            String name,
-            BigDecimal basicPrice,
-            String deliverySpeed
-    ) {
+    public DeliveryMethod(int id, String name, BigDecimal basicPrice, String deliverySpeed) {
         this.id = id;
         this.name = name;
         this.basicPrice = basicPrice;

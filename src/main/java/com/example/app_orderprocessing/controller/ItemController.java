@@ -1,325 +1,266 @@
 package com.example.app_orderprocessing.controller;
 
 import com.example.app_orderprocessing.dao.ItemDao;
+import com.example.app_orderprocessing.dao.RoleDao;
 import com.example.app_orderprocessing.model.Item;
+import com.example.app_orderprocessing.model.Role;
 import com.example.app_orderprocessing.model.User;
+import com.example.app_orderprocessing.util.ConfirmationDialog;
 import com.example.app_orderprocessing.view.ItemView;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
-import javafx.scene.input.MouseEvent;
 
 import java.math.BigDecimal;
 
-public class ItemController {
+public class ItemController implements EventHandler<ActionEvent> {
 
+    private ItemView view;
     private ItemDao itemDao;
-    private ItemView itemView;
+    private RoleDao roleDao;
     private User user;
 
-    public ItemController(
-            ItemView itemView,
-            User user
-    ) {
-        this.itemView = itemView;
+    private Item selectedItem;
+
+    public ItemController(ItemView view, User user) {
+        this.view = view;
         this.user = user;
 
         itemDao = new ItemDao();
+        roleDao = new RoleDao();
 
         loadItems();
-        checkRole();
+        configureAccess();
+        connectEvents();
+    }
 
-        itemView.getAddButton().setOnAction(
-                new EventHandler<ActionEvent>() {
-                    @Override
-                    public void handle(ActionEvent event) {
-                        addItem();
-                    }
-                }
-        );
+    private void connectEvents() {
+        view.getAddButton().setOnAction(this);
+        view.getEditButton().setOnAction(this);
+        view.getDeleteButton().setOnAction(this);
+        view.getSearchButton().setOnAction(this);
+        view.getResetSearchButton().setOnAction(this);
+        view.getSearchField().setOnAction(this);
 
-        itemView.getEditButton().setOnAction(
-                new EventHandler<ActionEvent>() {
+        view.getItemTable().getSelectionModel().selectedItemProperty().addListener(
+                new ChangeListener<Item>() {
                     @Override
-                    public void handle(ActionEvent event) {
-                        updateItem();
-                    }
-                }
-        );
-
-        itemView.getDeleteButton().setOnAction(
-                new EventHandler<ActionEvent>() {
-                    @Override
-                    public void handle(ActionEvent event) {
-                        deleteItem();
-                    }
-                }
-        );
-
-        itemView.getItemTable().setOnMouseClicked(
-                new EventHandler<MouseEvent>() {
-                    @Override
-                    public void handle(MouseEvent event) {
-                        fillFields();
+                    public void changed(ObservableValue<? extends Item> value,
+                                        Item oldItem,
+                                        Item newItem) {
+                        selectItem(newItem);
                     }
                 }
         );
     }
 
-    private void checkRole() {
-        if (user.getActiveRoleId() == 2) {
-            itemView
-                    .getDeleteButton()
-                    .setDisable(true);
+    @Override
+    public void handle(ActionEvent event) {
+        Object source = event.getSource();
+
+        if (source == view.getAddButton()) {
+            saveItem(false);
+        } else if (source == view.getEditButton()) {
+            saveItem(true);
+        } else if (source == view.getDeleteButton()) {
+            deleteItem();
+        } else if (source == view.getSearchButton() || source == view.getSearchField()) {
+            searchItems();
+        } else if (source == view.getResetSearchButton()) {
+            resetSearch();
         }
     }
 
-    public void loadItems() {
-        itemView
-                .getItemTable()
-                .getItems()
-                .setAll(itemDao.getAllItems());
+    private void configureAccess() {
+        if (isManager()) {
+            view.getDeleteButton().setDisable(true);
+        }
+
+        if (isCustomer()) {
+            view.getAddButton().setDisable(true);
+            view.getEditButton().setDisable(true);
+            view.getDeleteButton().setDisable(true);
+            view.getNameField().setDisable(true);
+            view.getPriceField().setDisable(true);
+            view.getInformationArea().setDisable(true);
+            view.getDeliveryCheckBox().setDisable(true);
+
+            showMessage("Доступен только просмотр товаров");
+        }
     }
 
-    private void addItem() {
-        String name =
-                itemView.getNameField().getText();
+    private boolean isManager() {
+        return hasRole("MANAGER");
+    }
 
-        String priceText =
-                itemView.getPriceField().getText();
+    private boolean isCustomer() {
+        return hasRole("CUSTOMER");
+    }
 
-        String information =
-                itemView.getInformationArea().getText();
+    private boolean hasRole(String name) {
+        Role role = roleDao.findByName(name);
+        return role != null && user.getActiveRoleId() == role.getId();
+    }
 
-        boolean hasDelivery =
-                itemView
-                        .getDeliveryCheckBox()
-                        .isSelected();
+    private void loadItems() {
+        view.getItemTable().getItems().setAll(itemDao.getAllItems());
+    }
 
-        if (name.isEmpty() || priceText.isEmpty()) {
-            itemView.getMessageLabel().setText(
-                    "Введите название и цену товара"
-            );
+    private void searchItems() {
+        String text = view.getSearchField().getText().trim();
 
+        clearFields();
+
+        if (text.isEmpty()) {
+            loadItems();
+            showMessage("Показаны все товары");
             return;
         }
 
-        BigDecimal price;
+        view.getItemTable().getItems().setAll(itemDao.searchItems(text));
 
-        try {
-            String correctedPrice =
-                    priceText.replace(",", ".");
+        int count = view.getItemTable().getItems().size();
 
-            price = new BigDecimal(correctedPrice);
+        if (count == 0) {
+            showMessage("Товары не найдены");
+        } else {
+            showMessage("Найдено товаров: " + count);
+        }
+    }
 
-        } catch (NumberFormatException e) {
-            itemView.getMessageLabel().setText(
-                    "Цена должна быть числом"
-            );
+    private void resetSearch() {
+        view.getSearchField().clear();
+        clearFields();
+        loadItems();
+        showMessage("Поиск сброшен");
+    }
 
+    private void selectItem(Item item) {
+        selectedItem = item;
+
+        if (item == null || isCustomer()) {
             return;
         }
 
-        if (price.compareTo(BigDecimal.ZERO) <= 0) {
-            itemView.getMessageLabel().setText(
-                    "Цена должна быть больше нуля"
-            );
+        view.getNameField().setText(item.getItemName());
+        view.getPriceField().setText(item.getPrice().toString());
+        view.getInformationArea().setText(item.getItemInformation());
+        view.getDeliveryCheckBox().setSelected(item.isHasDelivery());
+    }
 
+    private void saveItem(boolean edit) {
+        if (isCustomer()) {
+            showMessage("У вас нет права на изменение товаров");
             return;
         }
 
-        Item item = new Item(
-                name,
-                price,
-                information,
-                hasDelivery
-        );
+        if (edit && selectedItem == null) {
+            showMessage("Выберите товар");
+            return;
+        }
 
-        boolean added;
-        added = itemDao.addItem(item);
+        Item item = readItem();
 
-        if (added == true) {
-            itemView.getMessageLabel().setText(
-                    "Товар добавлен"
-            );
+        if (item == null) {
+            return;
+        }
+
+        boolean result;
+
+        if (edit) {
+            selectedItem.setItemName(item.getItemName());
+            selectedItem.setPrice(item.getPrice());
+            selectedItem.setItemInformation(item.getItemInformation());
+            selectedItem.setHasDelivery(item.isHasDelivery());
+
+            result = itemDao.updateItem(selectedItem);
+        } else {
+            result = itemDao.addItem(item);
+        }
+
+        if (result) {
+            if (edit) {
+                showMessage("Товар изменён");
+            } else {
+                showMessage("Товар добавлен");
+            }
 
             clearFields();
+            view.getSearchField().clear();
             loadItems();
-
         } else {
-            itemView.getMessageLabel().setText(
-                    "Не удалось добавить товар. " +
-                            "Проверьте, не существует ли товар с таким названием"
-            );
-        }
-    }
-
-    private void updateItem() {
-        Item selectedItem =
-                itemView
-                        .getItemTable()
-                        .getSelectionModel()
-                        .getSelectedItem();
-
-        if (selectedItem == null) {
-            itemView.getMessageLabel().setText(
-                    "Выберите товар"
-            );
-
-            return;
-        }
-
-        String name =
-                itemView.getNameField().getText();
-
-        String priceText =
-                itemView.getPriceField().getText();
-
-        String information =
-                itemView.getInformationArea().getText();
-
-        boolean hasDelivery =
-                itemView
-                        .getDeliveryCheckBox()
-                        .isSelected();
-
-        if (name.isEmpty() || priceText.isEmpty()) {
-            itemView.getMessageLabel().setText(
-                    "Введите название и цену товара"
-            );
-
-            return;
-        }
-
-        BigDecimal price;
-
-        try {
-            String correctedPrice =
-                    priceText.replace(",", ".");
-
-            price = new BigDecimal(correctedPrice);
-
-        } catch (NumberFormatException e) {
-            itemView.getMessageLabel().setText(
-                    "Цена должна быть числом"
-            );
-
-            return;
-        }
-
-        if (price.compareTo(BigDecimal.ZERO) <= 0) {
-            itemView.getMessageLabel().setText(
-                    "Цена должна быть больше нуля"
-            );
-
-            return;
-        }
-
-        selectedItem.setItemName(name);
-        selectedItem.setPrice(price);
-        selectedItem.setItemInformation(information);
-        selectedItem.setHasDelivery(hasDelivery);
-
-        boolean updated;
-        updated = itemDao.updateItem(selectedItem);
-
-        if (updated == true) {
-            itemView.getMessageLabel().setText(
-                    "Данные товара изменены"
-            );
-
-            clearFields();
-            loadItems();
-
-        } else {
-            itemView.getMessageLabel().setText(
-                    "Не удалось изменить товар"
-            );
+            showMessage("Не удалось сохранить товар");
         }
     }
 
     private void deleteItem() {
-        if (user.getActiveRoleId() == 2) {
-            itemView.getMessageLabel().setText(
-                    "У вас нет права на удаление"
-            );
-
+        if (isManager() || isCustomer()) {
+            showMessage("У вас нет права на удаление");
             return;
         }
-
-        Item selectedItem =
-                itemView
-                        .getItemTable()
-                        .getSelectionModel()
-                        .getSelectedItem();
 
         if (selectedItem == null) {
-            itemView.getMessageLabel().setText(
-                    "Выберите товар"
-            );
-
+            showMessage("Выберите товар");
             return;
         }
 
-        boolean deleted;
+        String text = "Удалить товар «" + selectedItem.getItemName() + "»?";
+        boolean confirmed = ConfirmationDialog.show(text);
 
-        deleted = itemDao.deleteItem(
-                selectedItem.getId()
-        );
+        if (confirmed == false) {
+            return;
+        }
 
-        if (deleted == true) {
-            itemView.getMessageLabel().setText(
-                    "Товар удалён"
-            );
+        boolean deleted = itemDao.deleteItem(selectedItem.getId());
 
+        if (deleted) {
+            showMessage("Товар удалён");
             clearFields();
             loadItems();
-
         } else {
-            itemView.getMessageLabel().setText(
-                    "Не удалось удалить товар. " +
-                            "Возможно, товар используется в сделке"
-            );
+            showMessage("Не удалось удалить товар. Возможно, он используется в сделке");
         }
     }
 
-    private void fillFields() {
-        Item selectedItem =
-                itemView
-                        .getItemTable()
-                        .getSelectionModel()
-                        .getSelectedItem();
+    private Item readItem() {
+        String name = view.getNameField().getText().trim();
+        String priceText = view.getPriceField().getText().trim();
+        String information = view.getInformationArea().getText().trim();
+        boolean hasDelivery = view.getDeliveryCheckBox().isSelected();
 
-        if (selectedItem != null) {
-            itemView.getNameField().setText(
-                    selectedItem.getItemName()
-            );
-
-            itemView.getPriceField().setText(
-                    selectedItem.getPrice().toString()
-            );
-
-            itemView.getInformationArea().setText(
-                    selectedItem.getItemInformation()
-            );
-
-            itemView.getDeliveryCheckBox().setSelected(
-                    selectedItem.getHasDelivery()
-            );
+        if (name.isEmpty() || priceText.isEmpty()) {
+            showMessage("Заполните название и цену");
+            return null;
         }
+
+        BigDecimal price;
+
+        try {
+            price = new BigDecimal(priceText.replace(",", "."));
+        } catch (NumberFormatException e) {
+            showMessage("Цена указана неверно");
+            return null;
+        }
+
+        if (price.compareTo(BigDecimal.ZERO) <= 0) {
+            showMessage("Цена должна быть больше нуля");
+            return null;
+        }
+
+        return new Item(name, price, information, hasDelivery);
     }
 
     private void clearFields() {
-        itemView.getNameField().clear();
-        itemView.getPriceField().clear();
-        itemView.getInformationArea().clear();
+        selectedItem = null;
+        view.getItemTable().getSelectionModel().clearSelection();
+        view.getNameField().clear();
+        view.getPriceField().clear();
+        view.getInformationArea().clear();
+        view.getDeliveryCheckBox().setSelected(false);
+    }
 
-        itemView
-                .getDeliveryCheckBox()
-                .setSelected(true);
-
-        itemView
-                .getItemTable()
-                .getSelectionModel()
-                .clearSelection();
+    private void showMessage(String text) {
+        view.getMessageLabel().setText(text);
     }
 }

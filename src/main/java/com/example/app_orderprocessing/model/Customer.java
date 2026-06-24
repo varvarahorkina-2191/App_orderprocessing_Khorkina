@@ -11,13 +11,7 @@ public class Customer {
     public Customer() {
     }
 
-    public Customer(
-            int id,
-            String customerName,
-            String address,
-            String phoneNumber,
-            String contactPerson
-    ) {
+    public Customer(int id, String customerName, String address, String phoneNumber, String contactPerson) {
         this.id = id;
         this.customerName = customerName;
         this.address = address;
@@ -25,12 +19,7 @@ public class Customer {
         this.contactPerson = contactPerson;
     }
 
-    public Customer(
-            String customerName,
-            String address,
-            String phoneNumber,
-            String contactPerson
-    ) {
+    public Customer(String customerName, String address, String phoneNumber, String contactPerson) {
         this.customerName = customerName;
         this.address = address;
         this.phoneNumber = phoneNumber;

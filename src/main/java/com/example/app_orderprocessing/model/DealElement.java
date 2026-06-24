@@ -18,13 +18,7 @@ public class DealElement {
     public DealElement() {
     }
 
-    public DealElement(
-            int documentId,
-            int itemId,
-            int deliveryId,
-            int amount,
-            BigDecimal deliveryPrice
-    ) {
+    public DealElement(int documentId, int itemId, int deliveryId, int amount, BigDecimal deliveryPrice) {
         this.documentId = documentId;
         this.itemId = itemId;
         this.deliveryId = deliveryId;
@@ -41,8 +35,7 @@ public class DealElement {
             BigDecimal deliveryPrice,
             String documentNumber,
             String itemName,
-            String deliveryName
-    ) {
+            String deliveryName) {
         this.id = id;
         this.documentId = documentId;
         this.itemId = itemId;

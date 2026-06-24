@@ -1,193 +1,276 @@
 package com.example.app_orderprocessing.controller;
 
 import com.example.app_orderprocessing.dao.DealElementDao;
-import com.example.app_orderprocessing.dao.DeliveryMethodDao;
 import com.example.app_orderprocessing.dao.DocumentDao;
 import com.example.app_orderprocessing.dao.ItemDao;
+import com.example.app_orderprocessing.dao.ItemDeliveryDao;
+import com.example.app_orderprocessing.dao.RoleDao;
 import com.example.app_orderprocessing.model.DealElement;
 import com.example.app_orderprocessing.model.DeliveryMethod;
 import com.example.app_orderprocessing.model.Document;
 import com.example.app_orderprocessing.model.Item;
+import com.example.app_orderprocessing.model.Role;
 import com.example.app_orderprocessing.model.User;
+import com.example.app_orderprocessing.util.ConfirmationDialog;
 import com.example.app_orderprocessing.view.DealElementView;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
-import javafx.scene.input.MouseEvent;
 
 import java.math.BigDecimal;
 import java.util.List;
 
-public class DealElementController {
+public class DealElementController implements EventHandler<ActionEvent> {
 
     private DealElementDao dealElementDao;
     private DocumentDao documentDao;
     private ItemDao itemDao;
-    private DeliveryMethodDao deliveryMethodDao;
+    private ItemDeliveryDao itemDeliveryDao;
+    private RoleDao roleDao;
 
-    private DealElementView dealElementView;
+    private DealElementView view;
     private User user;
 
     private List<Document> documents;
     private List<Item> items;
     private List<DeliveryMethod> deliveryMethods;
 
-    public DealElementController(
-            DealElementView dealElementView,
-            User user
-    ) {
-        this.dealElementView = dealElementView;
+    private DealElement selectedDealElement;
+
+    public DealElementController(DealElementView view, User user) {
+        this.view = view;
         this.user = user;
 
         dealElementDao = new DealElementDao();
         documentDao = new DocumentDao();
         itemDao = new ItemDao();
-        deliveryMethodDao = new DeliveryMethodDao();
+        itemDeliveryDao = new ItemDeliveryDao();
+        roleDao = new RoleDao();
 
         loadDocuments();
         loadItems();
-        loadDeliveryMethods();
         loadDealElements();
-        checkRole();
-
-        dealElementView.getAddButton().setOnAction(
-                new EventHandler<ActionEvent>() {
-                    @Override
-                    public void handle(ActionEvent event) {
-                        addDealElement();
-                    }
-                }
-        );
-
-        dealElementView.getEditButton().setOnAction(
-                new EventHandler<ActionEvent>() {
-                    @Override
-                    public void handle(ActionEvent event) {
-                        updateDealElement();
-                    }
-                }
-        );
-
-        dealElementView.getDeleteButton().setOnAction(
-                new EventHandler<ActionEvent>() {
-                    @Override
-                    public void handle(ActionEvent event) {
-                        deleteDealElement();
-                    }
-                }
-        );
-
-        dealElementView
-                .getDealElementTable()
-                .setOnMouseClicked(
-                        new EventHandler<MouseEvent>() {
-                            @Override
-                            public void handle(MouseEvent event) {
-                                fillFields();
-                            }
-                        }
-                );
+        configureAccess();
+        connectEvents();
     }
 
-    private void checkRole() {
-        if (user.getActiveRoleId() == 2) {
-            dealElementView
-                    .getDeleteButton()
-                    .setDisable(true);
+    private void connectEvents() {
+        view.getAddButton().setOnAction(this);
+        view.getEditButton().setOnAction(this);
+        view.getDeleteButton().setOnAction(this);
+        view.getSearchButton().setOnAction(this);
+        view.getResetSearchButton().setOnAction(this);
+        view.getSearchField().setOnAction(this);
+
+        view.getDealElementTable().getSelectionModel().selectedItemProperty().addListener(
+                new ChangeListener<DealElement>() {
+                    @Override
+                    public void changed(ObservableValue<? extends DealElement> value,
+                                        DealElement oldValue,
+                                        DealElement newValue) {
+                        selectDealElement(newValue);
+                    }
+                }
+        );
+
+        view.getItemComboBox().valueProperty().addListener(
+                new ChangeListener<String>() {
+                    @Override
+                    public void changed(ObservableValue<? extends String> value,
+                                        String oldValue,
+                                        String newValue) {
+                        loadDeliveryMethods();
+                    }
+                }
+        );
+
+        view.getDeliveryComboBox().valueProperty().addListener(
+                new ChangeListener<String>() {
+                    @Override
+                    public void changed(ObservableValue<? extends String> value,
+                                        String oldValue,
+                                        String newValue) {
+                        fillDeliveryPrice();
+                    }
+                }
+        );
+    }
+
+    @Override
+    public void handle(ActionEvent event) {
+        Object source = event.getSource();
+
+        if (source == view.getAddButton()) {
+            saveDealElement(false);
+        } else if (source == view.getEditButton()) {
+            saveDealElement(true);
+        } else if (source == view.getDeleteButton()) {
+            deleteDealElement();
+        } else if (source == view.getSearchButton() || source == view.getSearchField()) {
+            searchDealElements();
+        } else if (source == view.getResetSearchButton()) {
+            resetSearch();
         }
+    }
+
+    private void configureAccess() {
+        view.getDeliveryPriceField().setEditable(false);
+
+        if (isManager()) {
+            view.getDeleteButton().setDisable(true);
+        }
+
+        if (isCustomer()) {
+            view.getAddButton().setDisable(true);
+            view.getEditButton().setDisable(true);
+            view.getDeleteButton().setDisable(true);
+            view.getDocumentComboBox().setDisable(true);
+            view.getItemComboBox().setDisable(true);
+            view.getDeliveryComboBox().setDisable(true);
+            view.getAmountField().setDisable(true);
+            view.getDeliveryPriceField().setDisable(true);
+
+            showMessage("У вас нет доступа к элементам сделок");
+        }
+    }
+
+    private boolean hasRole(String name) {
+        Role role = roleDao.findByName(name);
+
+        return role != null && user.getActiveRoleId() == role.getId();
+    }
+
+    private boolean isManager() {
+        return hasRole("MANAGER");
+    }
+
+    private boolean isCustomer() {
+        return hasRole("CUSTOMER");
     }
 
     private void loadDocuments() {
         documents = documentDao.getAllDocuments();
+        view.getDocumentComboBox().getItems().clear();
 
-        dealElementView
-                .getDocumentComboBox()
-                .getItems()
-                .clear();
-
-        int i = 0;
-
-        while (i < documents.size()) {
-            Document document = documents.get(i);
-
-            dealElementView
-                    .getDocumentComboBox()
-                    .getItems()
-                    .add(document.getDocumentNumber());
-
-            i++;
+        for (Document document : documents) {
+            view.getDocumentComboBox().getItems().add(document.getDocumentNumber());
         }
     }
 
     private void loadItems() {
         items = itemDao.getAllItems();
+        view.getItemComboBox().getItems().clear();
 
-        dealElementView
-                .getItemComboBox()
-                .getItems()
-                .clear();
-
-        int i = 0;
-
-        while (i < items.size()) {
-            Item item = items.get(i);
-
-            dealElementView
-                    .getItemComboBox()
-                    .getItems()
-                    .add(item.getItemName());
-
-            i++;
-        }
-    }
-
-    private void loadDeliveryMethods() {
-        deliveryMethods =
-                deliveryMethodDao.getAllDeliveryMethods();
-
-        dealElementView
-                .getDeliveryComboBox()
-                .getItems()
-                .clear();
-
-        int i = 0;
-
-        while (i < deliveryMethods.size()) {
-            DeliveryMethod deliveryMethod =
-                    deliveryMethods.get(i);
-
-            dealElementView
-                    .getDeliveryComboBox()
-                    .getItems()
-                    .add(deliveryMethod.getName());
-
-            i++;
+        for (Item item : items) {
+            view.getItemComboBox().getItems().add(item.getItemName());
         }
     }
 
     public void loadDealElements() {
-        dealElementView
-                .getDealElementTable()
-                .getItems()
-                .setAll(
-                        dealElementDao.getAllDealElements()
-                );
+        view.getDealElementTable().getItems().setAll(dealElementDao.getAllDealElements());
     }
 
-    private void addDealElement() {
-        Document document = findSelectedDocument();
-        Item item = findSelectedItem();
+    private void searchDealElements() {
+        String text = view.getSearchField().getText().trim();
 
-        DeliveryMethod deliveryMethod =
-                findSelectedDeliveryMethod();
+        clearFields();
 
-        if (document == null
-                || item == null
-                || deliveryMethod == null) {
+        if (text.isEmpty()) {
+            loadDealElements();
+            showMessage("Показаны все элементы сделок");
+            return;
+        }
 
-            dealElementView.getMessageLabel().setText(
-                    "Выберите документ, товар и доставку"
-            );
+        view.getDealElementTable().getItems().setAll(dealElementDao.searchDealElements(text));
 
+        int count = view.getDealElementTable().getItems().size();
+
+        if (count == 0) {
+            showMessage("Элементы сделок не найдены");
+        } else {
+            showMessage("Найдено элементов: " + count);
+        }
+    }
+
+    private void resetSearch() {
+        view.getSearchField().clear();
+        clearFields();
+        loadDealElements();
+        showMessage("Поиск сброшен");
+    }
+
+    private void loadDeliveryMethods() {
+        Item item = findItem();
+
+        view.getDeliveryComboBox().getItems().clear();
+        view.getDeliveryComboBox().setValue(null);
+        view.getDeliveryPriceField().clear();
+        deliveryMethods = null;
+
+        if (item == null) {
+            return;
+        }
+
+        if (item.isHasDelivery() == false) {
+            showMessage("Для товара доставка недоступна");
+            return;
+        }
+
+        deliveryMethods = itemDeliveryDao.getDeliveryMethodsByItemId(item.getId());
+
+        for (DeliveryMethod delivery : deliveryMethods) {
+            view.getDeliveryComboBox().getItems().add(delivery.getName());
+        }
+
+        if (deliveryMethods.isEmpty()) {
+            showMessage("Для товара способы доставки не назначены");
+        } else {
+            showMessage("");
+        }
+    }
+
+    private void fillDeliveryPrice() {
+        DeliveryMethod delivery = findDelivery();
+
+        if (delivery == null) {
+            view.getDeliveryPriceField().clear();
+        } else {
+            view.getDeliveryPriceField().setText(delivery.getBasicPrice().toString());
+        }
+    }
+
+    private void selectDealElement(DealElement element) {
+        selectedDealElement = element;
+
+        if (element == null || isCustomer()) {
+            return;
+        }
+
+        view.getDocumentComboBox().setValue(element.getDocumentNumber());
+        view.getItemComboBox().setValue(element.getItemName());
+        loadDeliveryMethods();
+        view.getDeliveryComboBox().setValue(element.getDeliveryName());
+        view.getAmountField().setText(String.valueOf(element.getAmount()));
+        view.getDeliveryPriceField().setText(element.getDeliveryPrice().toString());
+    }
+
+    private void saveDealElement(boolean edit) {
+        if (isCustomer()) {
+            showMessage("У вас нет права на изменение элементов сделки");
+            return;
+        }
+
+        if (edit && selectedDealElement == null) {
+            showMessage("Выберите элемент сделки");
+            return;
+        }
+
+        Document document = findDocument();
+        Item item = findItem();
+        DeliveryMethod delivery = findDelivery();
+
+        if (checkData(document, item, delivery) == false) {
             return;
         }
 
@@ -197,405 +280,172 @@ public class DealElementController {
             return;
         }
 
-        BigDecimal deliveryPrice =
-                readDeliveryPrice();
+        BigDecimal price = delivery.getBasicPrice();
 
-        if (deliveryPrice == null) {
-            return;
-        }
+        if (edit) {
+            selectedDealElement.setDocumentId(document.getId());
+            selectedDealElement.setItemId(item.getId());
+            selectedDealElement.setDeliveryId(delivery.getId());
+            selectedDealElement.setAmount(amount);
+            selectedDealElement.setDeliveryPrice(price);
 
-        boolean available =
-                dealElementDao.isDeliveryAvailable(
-                        item.getId(),
-                        deliveryMethod.getId()
-                );
-
-        if (available == false) {
-            dealElementView.getMessageLabel().setText(
-                    "Выбранный способ доставки недоступен для товара"
-            );
-
-            return;
-        }
-
-        DealElement dealElement =
-                new DealElement(
-                        document.getId(),
-                        item.getId(),
-                        deliveryMethod.getId(),
-                        amount,
-                        deliveryPrice
-                );
-
-        boolean added =
-                dealElementDao.addDealElement(
-                        dealElement
-                );
-
-        if (added == true) {
-            dealElementView.getMessageLabel().setText(
-                    "Элемент сделки добавлен"
-            );
-
-            clearFields();
-            loadDealElements();
-
+            boolean result = dealElementDao.updateDealElement(selectedDealElement);
+            finishSaving(result, "Элемент сделки изменён");
         } else {
-            dealElementView.getMessageLabel().setText(
-                    "Не удалось добавить элемент сделки"
+            DealElement element = new DealElement(
+                    document.getId(),
+                    item.getId(),
+                    delivery.getId(),
+                    amount,
+                    price
             );
+
+            boolean result = dealElementDao.addDealElement(element);
+            finishSaving(result, "Элемент сделки добавлен");
         }
     }
 
-    private void updateDealElement() {
-        DealElement selectedDealElement =
-                dealElementView
-                        .getDealElementTable()
-                        .getSelectionModel()
-                        .getSelectedItem();
-
-        if (selectedDealElement == null) {
-            dealElementView.getMessageLabel().setText(
-                    "Выберите элемент сделки"
-            );
-
-            return;
+    private boolean checkData(Document document, Item item, DeliveryMethod delivery) {
+        if (document == null) {
+            showMessage("Выберите документ");
+            return false;
         }
 
-        Document document = findSelectedDocument();
-        Item item = findSelectedItem();
-
-        DeliveryMethod deliveryMethod =
-                findSelectedDeliveryMethod();
-
-        if (document == null
-                || item == null
-                || deliveryMethod == null) {
-
-            dealElementView.getMessageLabel().setText(
-                    "Выберите документ, товар и доставку"
-            );
-
-            return;
+        if (item == null) {
+            showMessage("Выберите товар");
+            return false;
         }
 
-        Integer amount = readAmount();
-
-        if (amount == null) {
-            return;
+        if (item.isHasDelivery() == false) {
+            showMessage("Для товара доставка недоступна");
+            return false;
         }
 
-        BigDecimal deliveryPrice =
-                readDeliveryPrice();
-
-        if (deliveryPrice == null) {
-            return;
+        if (delivery == null) {
+            showMessage("Выберите способ доставки");
+            return false;
         }
 
-        boolean available =
-                dealElementDao.isDeliveryAvailable(
-                        item.getId(),
-                        deliveryMethod.getId()
-                );
-
-        if (available == false) {
-            dealElementView.getMessageLabel().setText(
-                    "Выбранный способ доставки недоступен для товара"
-            );
-
-            return;
+        if (dealElementDao.isDeliveryAvailable(item.getId(), delivery.getId()) == false) {
+            showMessage("Этот способ доставки недоступен");
+            return false;
         }
 
-        selectedDealElement.setDocumentId(
-                document.getId()
-        );
+        return true;
+    }
 
-        selectedDealElement.setItemId(
-                item.getId()
-        );
-
-        selectedDealElement.setDeliveryId(
-                deliveryMethod.getId()
-        );
-
-        selectedDealElement.setAmount(amount);
-
-        selectedDealElement.setDeliveryPrice(
-                deliveryPrice
-        );
-
-        boolean updated =
-                dealElementDao.updateDealElement(
-                        selectedDealElement
-                );
-
-        if (updated == true) {
-            dealElementView.getMessageLabel().setText(
-                    "Элемент сделки изменён"
-            );
-
+    private void finishSaving(boolean result, String message) {
+        if (result) {
+            showMessage(message);
             clearFields();
+            view.getSearchField().clear();
             loadDealElements();
-
         } else {
-            dealElementView.getMessageLabel().setText(
-                    "Не удалось изменить элемент сделки"
-            );
+            showMessage("Не удалось сохранить элемент сделки");
         }
     }
 
     private void deleteDealElement() {
-        if (user.getActiveRoleId() == 2) {
-            dealElementView.getMessageLabel().setText(
-                    "У вас нет права на удаление"
-            );
-
+        if (isManager() || isCustomer()) {
+            showMessage("У вас нет права на удаление");
             return;
         }
-
-        DealElement selectedDealElement =
-                dealElementView
-                        .getDealElementTable()
-                        .getSelectionModel()
-                        .getSelectedItem();
 
         if (selectedDealElement == null) {
-            dealElementView.getMessageLabel().setText(
-                    "Выберите элемент сделки"
-            );
-
+            showMessage("Выберите элемент сделки");
             return;
         }
 
-        boolean deleted =
-                dealElementDao.deleteDealElement(
-                        selectedDealElement.getId()
-                );
+        String text = "Удалить товар «" + selectedDealElement.getItemName() + "»?";
+        boolean confirmed = ConfirmationDialog.show(text);
 
-        if (deleted == true) {
-            dealElementView.getMessageLabel().setText(
-                    "Элемент сделки удалён"
-            );
+        if (confirmed == false) {
+            return;
+        }
 
+        boolean deleted = dealElementDao.deleteDealElement(selectedDealElement.getId());
+
+        if (deleted) {
+            showMessage("Элемент сделки удалён");
             clearFields();
             loadDealElements();
-
         } else {
-            dealElementView.getMessageLabel().setText(
-                    "Не удалось удалить элемент сделки"
-            );
+            showMessage("Не удалось удалить элемент сделки");
         }
     }
 
     private Integer readAmount() {
-        String amountText =
-                dealElementView
-                        .getAmountField()
-                        .getText();
-
-        if (amountText.isEmpty()) {
-            dealElementView.getMessageLabel().setText(
-                    "Введите количество"
-            );
-
-            return null;
-        }
-
-        int amount;
+        String text = view.getAmountField().getText().trim();
 
         try {
-            amount = Integer.parseInt(amountText);
+            int amount = Integer.parseInt(text);
 
+            if (amount > 0) {
+                return amount;
+            }
         } catch (NumberFormatException e) {
-            dealElementView.getMessageLabel().setText(
-                    "Количество должно быть целым числом"
-            );
-
+            showMessage("Количество должно быть целым числом");
             return null;
         }
 
-        if (amount <= 0) {
-            dealElementView.getMessageLabel().setText(
-                    "Количество должно быть больше нуля"
-            );
-
-            return null;
-        }
-
-        return amount;
+        showMessage("Количество должно быть больше нуля");
+        return null;
     }
 
-    private BigDecimal readDeliveryPrice() {
-        String priceText =
-                dealElementView
-                        .getDeliveryPriceField()
-                        .getText();
+    private Document findDocument() {
+        String number = view.getDocumentComboBox().getValue();
 
-        if (priceText.isEmpty()) {
-            dealElementView.getMessageLabel().setText(
-                    "Введите стоимость доставки"
-            );
-
-            return null;
-        }
-
-        BigDecimal price;
-
-        try {
-            String correctedPrice =
-                    priceText.replace(",", ".");
-
-            price = new BigDecimal(correctedPrice);
-
-        } catch (NumberFormatException e) {
-            dealElementView.getMessageLabel().setText(
-                    "Стоимость доставки должна быть числом"
-            );
-
-            return null;
-        }
-
-        if (price.compareTo(BigDecimal.ZERO) < 0) {
-            dealElementView.getMessageLabel().setText(
-                    "Стоимость доставки не может быть отрицательной"
-            );
-
-            return null;
-        }
-
-        return price;
-    }
-
-    private Document findSelectedDocument() {
-        String number =
-                dealElementView
-                        .getDocumentComboBox()
-                        .getValue();
-
-        if (number == null) {
-            return null;
-        }
-
-        int i = 0;
-
-        while (i < documents.size()) {
-            Document document = documents.get(i);
-
-            if (document.getDocumentNumber().equals(number)) {
-                return document;
+        if (number != null) {
+            for (Document document : documents) {
+                if (document.getDocumentNumber().equals(number)) {
+                    return document;
+                }
             }
-
-            i++;
         }
 
         return null;
     }
 
-    private Item findSelectedItem() {
-        String name =
-                dealElementView
-                        .getItemComboBox()
-                        .getValue();
+    private Item findItem() {
+        String name = view.getItemComboBox().getValue();
 
-        if (name == null) {
-            return null;
-        }
-
-        int i = 0;
-
-        while (i < items.size()) {
-            Item item = items.get(i);
-
-            if (item.getItemName().equals(name)) {
-                return item;
+        if (name != null) {
+            for (Item item : items) {
+                if (item.getItemName().equals(name)) {
+                    return item;
+                }
             }
-
-            i++;
         }
 
         return null;
     }
 
-    private DeliveryMethod findSelectedDeliveryMethod() {
-        String name = dealElementView.getDeliveryComboBox().getValue();
+    private DeliveryMethod findDelivery() {
+        String name = view.getDeliveryComboBox().getValue();
 
-        if (name == null) {
-            return null;
-        }
-
-        int i = 0;
-
-        while (i < deliveryMethods.size()) {
-            DeliveryMethod deliveryMethod =
-                    deliveryMethods.get(i);
-
-            if (deliveryMethod.getName().equals(name)) {
-                return deliveryMethod;
+        if (name != null && deliveryMethods != null) {
+            for (DeliveryMethod delivery : deliveryMethods) {
+                if (delivery.getName().equals(name)) {
+                    return delivery;
+                }
             }
-
-            i++;
         }
 
         return null;
-    }
-
-    private void fillFields() {
-        DealElement selectedDealElement =
-                dealElementView.getDealElementTable().getSelectionModel().getSelectedItem();
-
-        if (selectedDealElement != null) {
-            dealElementView.getDocumentComboBox().setValue(selectedDealElement.getDocumentNumber());
-
-            dealElementView.getItemComboBox().setValue(selectedDealElement.getItemName());
-
-            dealElementView
-                    .getDeliveryComboBox()
-                    .setValue(
-                            selectedDealElement
-                                    .getDeliveryName()
-                    );
-
-            dealElementView
-                    .getAmountField()
-                    .setText(
-                            String.valueOf(
-                                    selectedDealElement
-                                            .getAmount()
-                            )
-                    );
-
-            dealElementView
-                    .getDeliveryPriceField()
-                    .setText(
-                            selectedDealElement
-                                    .getDeliveryPrice()
-                                    .toString()
-                    );
-        }
     }
 
     private void clearFields() {
-        dealElementView
-                .getDocumentComboBox()
-                .getSelectionModel()
-                .clearSelection();
+        selectedDealElement = null;
+        view.getDealElementTable().getSelectionModel().clearSelection();
+        view.getDocumentComboBox().setValue(null);
+        view.getItemComboBox().setValue(null);
+        view.getDeliveryComboBox().setValue(null);
+        view.getAmountField().clear();
+        view.getDeliveryPriceField().clear();
+        deliveryMethods = null;
+    }
 
-        dealElementView
-                .getItemComboBox()
-                .getSelectionModel()
-                .clearSelection();
-
-        dealElementView
-                .getDeliveryComboBox()
-                .getSelectionModel()
-                .clearSelection();
-
-        dealElementView.getAmountField().clear();
-        dealElementView.getDeliveryPriceField().clear();
-
-        dealElementView
-                .getDealElementTable()
-                .getSelectionModel()
-                .clearSelection();
+    private void showMessage(String text) {
+        view.getMessageLabel().setText(text);
     }
 }

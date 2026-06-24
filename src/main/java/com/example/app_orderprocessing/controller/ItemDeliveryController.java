@@ -3,10 +3,13 @@ package com.example.app_orderprocessing.controller;
 import com.example.app_orderprocessing.dao.DeliveryMethodDao;
 import com.example.app_orderprocessing.dao.ItemDao;
 import com.example.app_orderprocessing.dao.ItemDeliveryDao;
+import com.example.app_orderprocessing.dao.RoleDao;
 import com.example.app_orderprocessing.model.DeliveryMethod;
 import com.example.app_orderprocessing.model.Item;
 import com.example.app_orderprocessing.model.ItemDelivery;
+import com.example.app_orderprocessing.model.Role;
 import com.example.app_orderprocessing.model.User;
+import com.example.app_orderprocessing.util.ConfirmationDialog;
 import com.example.app_orderprocessing.view.ItemDeliveryView;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
@@ -19,405 +22,248 @@ public class ItemDeliveryController {
     private ItemDeliveryDao itemDeliveryDao;
     private ItemDao itemDao;
     private DeliveryMethodDao deliveryMethodDao;
+    private RoleDao roleDao;
 
-    private ItemDeliveryView itemDeliveryView;
+    private ItemDeliveryView view;
     private User user;
 
     private ArrayList<Item> items;
     private ArrayList<DeliveryMethod> deliveryMethods;
 
-    public ItemDeliveryController(
-            ItemDeliveryView itemDeliveryView,
-            User user
-    ) {
-        this.itemDeliveryView = itemDeliveryView;
+    public ItemDeliveryController(ItemDeliveryView view, User user) {
+        this.view = view;
         this.user = user;
 
         itemDeliveryDao = new ItemDeliveryDao();
         itemDao = new ItemDao();
         deliveryMethodDao = new DeliveryMethodDao();
+        roleDao = new RoleDao();
 
         loadItems();
         loadDeliveryMethods();
         loadItemDeliveries();
-        checkRole();
-
-        itemDeliveryView
-                .getAddButton()
-                .setOnAction(
-                        new EventHandler<ActionEvent>() {
-                            @Override
-                            public void handle(ActionEvent event) {
-                                addItemDelivery();
-                            }
-                        }
-                );
-
-        itemDeliveryView
-                .getEditButton()
-                .setOnAction(
-                        new EventHandler<ActionEvent>() {
-                            @Override
-                            public void handle(ActionEvent event) {
-                                updateItemDelivery();
-                            }
-                        }
-                );
-
-        itemDeliveryView
-                .getDeleteButton()
-                .setOnAction(
-                        new EventHandler<ActionEvent>() {
-                            @Override
-                            public void handle(ActionEvent event) {
-                                deleteItemDelivery();
-                            }
-                        }
-                );
-
-        itemDeliveryView
-                .getItemDeliveryTable()
-                .setOnMouseClicked(
-                        new EventHandler<MouseEvent>() {
-                            @Override
-                            public void handle(MouseEvent event) {
-                                fillFields();
-                            }
-                        }
-                );
+        configureAccess();
+        connectEvents();
     }
 
-    private void checkRole() {
-        if (user.getActiveRoleId() == 2) {
-            itemDeliveryView
-                    .getDeleteButton()
-                    .setDisable(true);
+    private void connectEvents() {
+        view.getAddButton().setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent event) {
+                saveItemDelivery(false);
+            }
+        });
+
+        view.getEditButton().setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent event) {
+                saveItemDelivery(true);
+            }
+        });
+
+        view.getDeleteButton().setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent event) {
+                deleteItemDelivery();
+            }
+        });
+
+        view.getItemDeliveryTable().setOnMouseClicked(new EventHandler<MouseEvent>() {
+            @Override
+            public void handle(MouseEvent event) {
+                fillFields();
+            }
+        });
+    }
+
+    private void configureAccess() {
+        if (isManager()) {
+            view.getDeleteButton().setDisable(true);
         }
+
+        if (isCustomer()) {
+            view.enableCustomerMode();
+        }
+    }
+
+    private boolean isManager() {
+        return hasRole("MANAGER");
+    }
+
+    private boolean isCustomer() {
+        return hasRole("CUSTOMER");
+    }
+
+    private boolean hasRole(String name) {
+        Role role = roleDao.findByName(name);
+        return role != null && user.getActiveRoleId() == role.getId();
     }
 
     private void loadItems() {
         items = itemDao.getAllItems();
+        view.getItemComboBox().getItems().clear();
 
-        itemDeliveryView
-                .getItemComboBox()
-                .getItems()
-                .clear();
-
-        int i = 0;
-
-        while (i < items.size()) {
-            Item item = items.get(i);
-
-            itemDeliveryView
-                    .getItemComboBox()
-                    .getItems()
-                    .add(item.getItemName());
-
-            i++;
+        for (Item item : items) {
+            view.getItemComboBox().getItems().add(item.getItemName());
         }
     }
 
     private void loadDeliveryMethods() {
-        deliveryMethods =
-                deliveryMethodDao.getAllDeliveryMethods();
+        deliveryMethods = deliveryMethodDao.getAllDeliveryMethods();
+        view.getDeliveryComboBox().getItems().clear();
 
-        itemDeliveryView
-                .getDeliveryComboBox()
-                .getItems()
-                .clear();
-
-        int i = 0;
-
-        while (i < deliveryMethods.size()) {
-            DeliveryMethod deliveryMethod =
-                    deliveryMethods.get(i);
-
-            itemDeliveryView
-                    .getDeliveryComboBox()
-                    .getItems()
-                    .add(deliveryMethod.getName());
-
-            i++;
+        for (DeliveryMethod delivery : deliveryMethods) {
+            view.getDeliveryComboBox().getItems().add(delivery.getName());
         }
     }
 
     public void loadItemDeliveries() {
-        itemDeliveryView
-                .getItemDeliveryTable()
-                .getItems()
-                .setAll(
-                        itemDeliveryDao.getAllItemDeliveries()
-                );
+        view.getItemDeliveryTable().getItems().setAll(itemDeliveryDao.getAllItemDeliveries());
     }
 
-    private void addItemDelivery() {
-        Item selectedItem = findSelectedItem();
-
-        DeliveryMethod selectedDeliveryMethod =
-                findSelectedDeliveryMethod();
-
-        if (selectedItem == null
-                || selectedDeliveryMethod == null) {
-
-            itemDeliveryView
-                    .getMessageLabel()
-                    .setText(
-                            "Выберите товар и способ доставки"
-                    );
-
+    private void saveItemDelivery(boolean edit) {
+        if (isCustomer()) {
+            showMessage("У вас нет права на изменение");
             return;
         }
 
-        ItemDelivery itemDelivery =
-                new ItemDelivery(
-                        selectedItem.getId(),
-                        selectedDeliveryMethod.getId()
-                );
+        ItemDelivery selected = getSelectedItemDelivery();
 
-        boolean added;
+        if (edit && selected == null) {
+            showMessage("Выберите запись в таблице");
+            return;
+        }
 
-        added = itemDeliveryDao.addItemDelivery(
-                itemDelivery
-        );
+        Item item = findSelectedItem();
+        DeliveryMethod delivery = findSelectedDeliveryMethod();
 
-        if (added == true) {
-            itemDeliveryView
-                    .getMessageLabel()
-                    .setText(
-                            "Способ доставки назначен товару"
-                    );
+        if (item == null || delivery == null) {
+            showMessage("Выберите товар и способ доставки");
+            return;
+        }
+
+        if (item.isHasDelivery() == false) {
+            showMessage("Для выбранного товара доставка недоступна");
+            return;
+        }
+
+        ItemDelivery itemDelivery = new ItemDelivery(item.getId(), delivery.getId());
+        boolean result;
+
+        if (edit) {
+            result = itemDeliveryDao.updateItemDelivery(
+                    itemDelivery,
+                    selected.getItemId(),
+                    selected.getDeliveryId()
+            );
+        } else {
+            result = itemDeliveryDao.addItemDelivery(itemDelivery);
+        }
+
+        if (result) {
+            if (edit) {
+                showMessage("Способ доставки товара изменён");
+            } else {
+                showMessage("Способ доставки назначен товару");
+            }
 
             clearFields();
             loadItemDeliveries();
-
         } else {
-            itemDeliveryView
-                    .getMessageLabel()
-                    .setText(
-                            "Не удалось добавить запись. " +
-                                    "Возможно, этот способ доставки уже назначен товару"
-                    );
-        }
-    }
-
-    private void updateItemDelivery() {
-        ItemDelivery selectedItemDelivery =
-                itemDeliveryView
-                        .getItemDeliveryTable()
-                        .getSelectionModel()
-                        .getSelectedItem();
-
-        if (selectedItemDelivery == null) {
-            itemDeliveryView
-                    .getMessageLabel()
-                    .setText(
-                            "Выберите запись в таблице"
-                    );
-
-            return;
-        }
-
-        Item selectedItem = findSelectedItem();
-
-        DeliveryMethod selectedDeliveryMethod =
-                findSelectedDeliveryMethod();
-
-        if (selectedItem == null
-                || selectedDeliveryMethod == null) {
-
-            itemDeliveryView
-                    .getMessageLabel()
-                    .setText(
-                            "Выберите товар и способ доставки"
-                    );
-
-            return;
-        }
-
-        int oldItemId =
-                selectedItemDelivery.getItemId();
-
-        int oldDeliveryId =
-                selectedItemDelivery.getDeliveryId();
-
-        ItemDelivery newItemDelivery =
-                new ItemDelivery(
-                        selectedItem.getId(),
-                        selectedDeliveryMethod.getId()
-                );
-
-        boolean updated;
-
-        updated = itemDeliveryDao.updateItemDelivery(
-                newItemDelivery,
-                oldItemId,
-                oldDeliveryId
-        );
-
-        if (updated == true) {
-            itemDeliveryView
-                    .getMessageLabel()
-                    .setText(
-                            "Способ доставки товара изменён"
-                    );
-
-            clearFields();
-            loadItemDeliveries();
-
-        } else {
-            itemDeliveryView
-                    .getMessageLabel()
-                    .setText(
-                            "Не удалось изменить запись. " +
-                                    "Возможно, такая связь уже существует"
-                    );
+            showMessage("Не удалось сохранить запись. Возможно, такая связь уже существует");
         }
     }
 
     private void deleteItemDelivery() {
-        if (user.getActiveRoleId() == 2) {
-            itemDeliveryView
-                    .getMessageLabel()
-                    .setText(
-                            "У вас нет права на удаление"
-                    );
-
+        if (isManager() || isCustomer()) {
+            showMessage("У вас нет права на удаление");
             return;
         }
 
-        ItemDelivery selectedItemDelivery =
-                itemDeliveryView
-                        .getItemDeliveryTable()
-                        .getSelectionModel()
-                        .getSelectedItem();
+        ItemDelivery itemDelivery = getSelectedItemDelivery();
 
-        if (selectedItemDelivery == null) {
-            itemDeliveryView
-                    .getMessageLabel()
-                    .setText(
-                            "Выберите запись в таблице"
-                    );
-
+        if (itemDelivery == null) {
+            showMessage("Выберите запись в таблице");
             return;
         }
 
-        boolean deleted;
+        String text = "Удалить способ доставки «" + itemDelivery.getDeliveryName()
+                + "» у товара «" + itemDelivery.getItemName() + "»?";
 
-        deleted = itemDeliveryDao.deleteItemDelivery(
-                selectedItemDelivery.getItemId(),
-                selectedItemDelivery.getDeliveryId()
+        boolean confirmed = ConfirmationDialog.show(text);
+
+        if (confirmed == false) {
+            return;
+        }
+
+        boolean deleted = itemDeliveryDao.deleteItemDelivery(
+                itemDelivery.getItemId(),
+                itemDelivery.getDeliveryId()
         );
 
-        if (deleted == true) {
-            itemDeliveryView
-                    .getMessageLabel()
-                    .setText(
-                            "Способ доставки удалён у товара"
-                    );
-
+        if (deleted) {
+            showMessage("Способ доставки удалён у товара");
             clearFields();
             loadItemDeliveries();
-
         } else {
-            itemDeliveryView
-                    .getMessageLabel()
-                    .setText(
-                            "Не удалось удалить запись"
-                    );
+            showMessage("Не удалось удалить запись. Возможно, она используется в сделке");
         }
     }
 
     private Item findSelectedItem() {
-        String selectedItemName =
-                itemDeliveryView
-                        .getItemComboBox()
-                        .getValue();
+        String name = view.getItemComboBox().getValue();
 
-        if (selectedItemName == null) {
-            return null;
-        }
-
-        int i = 0;
-
-        while (i < items.size()) {
-            Item item = items.get(i);
-
-            if (item.getItemName().equals(
-                    selectedItemName
-            )) {
-                return item;
+        if (name != null) {
+            for (Item item : items) {
+                if (item.getItemName().equals(name)) {
+                    return item;
+                }
             }
-
-            i++;
         }
 
         return null;
     }
 
     private DeliveryMethod findSelectedDeliveryMethod() {
-        String selectedDeliveryName =
-                itemDeliveryView
-                        .getDeliveryComboBox()
-                        .getValue();
+        String name = view.getDeliveryComboBox().getValue();
 
-        if (selectedDeliveryName == null) {
-            return null;
-        }
-
-        int i = 0;
-
-        while (i < deliveryMethods.size()) {
-            DeliveryMethod deliveryMethod =
-                    deliveryMethods.get(i);
-
-            if (deliveryMethod.getName().equals(
-                    selectedDeliveryName
-            )) {
-                return deliveryMethod;
+        if (name != null) {
+            for (DeliveryMethod delivery : deliveryMethods) {
+                if (delivery.getName().equals(name)) {
+                    return delivery;
+                }
             }
-
-            i++;
         }
 
         return null;
     }
 
+    private ItemDelivery getSelectedItemDelivery() {
+        return view.getItemDeliveryTable().getSelectionModel().getSelectedItem();
+    }
+
     private void fillFields() {
-        ItemDelivery selectedItemDelivery =
-                itemDeliveryView
-                        .getItemDeliveryTable()
-                        .getSelectionModel()
-                        .getSelectedItem();
-
-        if (selectedItemDelivery != null) {
-            itemDeliveryView
-                    .getItemComboBox()
-                    .setValue(
-                            selectedItemDelivery.getItemName()
-                    );
-
-            itemDeliveryView
-                    .getDeliveryComboBox()
-                    .setValue(
-                            selectedItemDelivery.getDeliveryName()
-                    );
+        if (isCustomer()) {
+            return;
         }
+
+        ItemDelivery itemDelivery = getSelectedItemDelivery();
+
+        if (itemDelivery == null) {
+            return;
+        }
+
+        view.getItemComboBox().setValue(itemDelivery.getItemName());
+        view.getDeliveryComboBox().setValue(itemDelivery.getDeliveryName());
     }
 
     private void clearFields() {
-        itemDeliveryView
-                .getItemComboBox()
-                .getSelectionModel()
-                .clearSelection();
+        view.getItemComboBox().getSelectionModel().clearSelection();
+        view.getDeliveryComboBox().getSelectionModel().clearSelection();
+        view.getItemDeliveryTable().getSelectionModel().clearSelection();
+    }
 
-        itemDeliveryView
-                .getDeliveryComboBox()
-                .getSelectionModel()
-                .clearSelection();
-
-        itemDeliveryView
-                .getItemDeliveryTable()
-                .getSelectionModel()
-                .clearSelection();
+    private void showMessage(String text) {
+        view.getMessageLabel().setText(text);
     }
 }

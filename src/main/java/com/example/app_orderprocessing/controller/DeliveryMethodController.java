@@ -1,393 +1,237 @@
 package com.example.app_orderprocessing.controller;
 
 import com.example.app_orderprocessing.dao.DeliveryMethodDao;
+import com.example.app_orderprocessing.dao.RoleDao;
 import com.example.app_orderprocessing.model.DeliveryMethod;
+import com.example.app_orderprocessing.model.Role;
 import com.example.app_orderprocessing.model.User;
+import com.example.app_orderprocessing.util.ConfirmationDialog;
 import com.example.app_orderprocessing.view.DeliveryMethodView;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
-import javafx.scene.input.MouseEvent;
 
 import java.math.BigDecimal;
 
-public class DeliveryMethodController {
+public class DeliveryMethodController implements EventHandler<ActionEvent> {
 
+    private DeliveryMethodView view;
     private DeliveryMethodDao deliveryMethodDao;
-    private DeliveryMethodView deliveryMethodView;
+    private RoleDao roleDao;
     private User user;
 
-    public DeliveryMethodController(
-            DeliveryMethodView deliveryMethodView,
-            User user
-    ) {
-        this.deliveryMethodView = deliveryMethodView;
+    private DeliveryMethod selectedDeliveryMethod;
+
+    public DeliveryMethodController(DeliveryMethodView view, User user) {
+        this.view = view;
         this.user = user;
 
         deliveryMethodDao = new DeliveryMethodDao();
+        roleDao = new RoleDao();
 
         loadDeliveryMethods();
-        checkRole();
-
-        deliveryMethodView
-                .getAddButton()
-                .setOnAction(
-                        new EventHandler<ActionEvent>() {
-                            @Override
-                            public void handle(ActionEvent event) {
-                                addDeliveryMethod();
-                            }
-                        }
-                );
-
-        deliveryMethodView
-                .getEditButton()
-                .setOnAction(
-                        new EventHandler<ActionEvent>() {
-                            @Override
-                            public void handle(ActionEvent event) {
-                                updateDeliveryMethod();
-                            }
-                        }
-                );
-
-        deliveryMethodView
-                .getDeleteButton()
-                .setOnAction(
-                        new EventHandler<ActionEvent>() {
-                            @Override
-                            public void handle(ActionEvent event) {
-                                deleteDeliveryMethod();
-                            }
-                        }
-                );
-
-        deliveryMethodView
-                .getDeliveryMethodTable()
-                .setOnMouseClicked(
-                        new EventHandler<MouseEvent>() {
-                            @Override
-                            public void handle(MouseEvent event) {
-                                fillFields();
-                            }
-                        }
-                );
+        configureAccess();
+        connectEvents();
     }
 
-    private void checkRole() {
-        if (user.getActiveRoleId() == 2) {
-            deliveryMethodView
-                    .getDeleteButton()
-                    .setDisable(true);
+    private void connectEvents() {
+        view.getAddButton().setOnAction(this);
+        view.getEditButton().setOnAction(this);
+        view.getDeleteButton().setOnAction(this);
+
+        view.getDeliveryMethodTable().getSelectionModel().selectedItemProperty().addListener(
+                new ChangeListener<DeliveryMethod>() {
+                    @Override
+                    public void changed(
+                            ObservableValue<? extends DeliveryMethod> value,
+                            DeliveryMethod oldValue,
+                            DeliveryMethod newValue
+                    ) {
+                        selectDeliveryMethod(newValue);
+                    }
+                }
+        );
+    }
+
+    @Override
+    public void handle(ActionEvent event) {
+        Object source = event.getSource();
+
+        if (source == view.getAddButton()) {
+            saveDeliveryMethod(false);
+        } else if (source == view.getEditButton()) {
+            saveDeliveryMethod(true);
+        } else if (source == view.getDeleteButton()) {
+            deleteDeliveryMethod();
         }
     }
 
-    public void loadDeliveryMethods() {
-        deliveryMethodView
-                .getDeliveryMethodTable()
-                .getItems()
-                .setAll(
-                        deliveryMethodDao
-                                .getAllDeliveryMethods()
-                );
+    private void configureAccess() {
+        if (isManager()) {
+            view.getDeleteButton().setDisable(true);
+        }
+
+        if (isCustomer()) {
+            view.getAddButton().setDisable(true);
+            view.getEditButton().setDisable(true);
+            view.getDeleteButton().setDisable(true);
+
+            view.getNameField().setDisable(true);
+            view.getBasicPriceField().setDisable(true);
+            view.getDeliverySpeedField().setDisable(true);
+
+            showMessage("Доступен только просмотр способов доставки");
+        }
     }
 
-    private void addDeliveryMethod() {
-        String name =
-                deliveryMethodView
-                        .getNameField()
-                        .getText();
+    private boolean isManager() {
+        return hasRole("MANAGER");
+    }
 
-        String priceText =
-                deliveryMethodView
-                        .getBasicPriceField()
-                        .getText();
+    private boolean isCustomer() {
+        return hasRole("CUSTOMER");
+    }
 
-        String deliverySpeed =
-                deliveryMethodView
-                        .getDeliverySpeedField()
-                        .getText();
+    private boolean hasRole(String name) {
+        Role role = roleDao.findByName(name);
 
-        if (name.isEmpty()
-                || priceText.isEmpty()
-                || deliverySpeed.isEmpty()) {
+        return role != null && user.getActiveRoleId() == role.getId();
+    }
 
-            deliveryMethodView
-                    .getMessageLabel()
-                    .setText("Заполните все поля");
+    private void loadDeliveryMethods() {
+        view.getDeliveryMethodTable().getItems().setAll(
+                deliveryMethodDao.getAllDeliveryMethods()
+        );
+    }
 
+    private void selectDeliveryMethod(DeliveryMethod delivery) {
+        selectedDeliveryMethod = delivery;
+
+        if (delivery == null || isCustomer()) {
             return;
         }
 
-        BigDecimal basicPrice;
+        view.getNameField().setText(delivery.getName());
+        view.getBasicPriceField().setText(delivery.getBasicPrice().toString());
+        view.getDeliverySpeedField().setText(delivery.getDeliverySpeed());
+    }
 
-        try {
-            String correctedPrice =
-                    priceText.replace(",", ".");
-
-            basicPrice =
-                    new BigDecimal(correctedPrice);
-
-        } catch (NumberFormatException e) {
-            deliveryMethodView
-                    .getMessageLabel()
-                    .setText(
-                            "Стоимость должна быть числом"
-                    );
-
+    private void saveDeliveryMethod(boolean edit) {
+        if (isCustomer()) {
+            showMessage("У вас нет права на изменение");
             return;
         }
 
-        if (basicPrice.compareTo(BigDecimal.ZERO) < 0) {
-            deliveryMethodView
-                    .getMessageLabel()
-                    .setText(
-                            "Стоимость не может быть отрицательной"
-                    );
-
+        if (edit && selectedDeliveryMethod == null) {
+            showMessage("Выберите способ доставки");
             return;
         }
 
-        DeliveryMethod deliveryMethod =
-                new DeliveryMethod(
-                        name,
-                        basicPrice,
-                        deliverySpeed
-                );
+        DeliveryMethod delivery = readDeliveryMethod();
 
-        boolean added;
+        if (delivery == null) {
+            return;
+        }
 
-        added = deliveryMethodDao
-                .addDeliveryMethod(deliveryMethod);
+        boolean result;
 
-        if (added == true) {
-            deliveryMethodView
-                    .getMessageLabel()
-                    .setText(
-                            "Способ доставки добавлен"
-                    );
+        if (edit) {
+            selectedDeliveryMethod.setName(delivery.getName());
+            selectedDeliveryMethod.setBasicPrice(delivery.getBasicPrice());
+            selectedDeliveryMethod.setDeliverySpeed(delivery.getDeliverySpeed());
+
+            result = deliveryMethodDao.updateDeliveryMethod(selectedDeliveryMethod);
+        } else {
+            result = deliveryMethodDao.addDeliveryMethod(delivery);
+        }
+
+        if (result) {
+            if (edit) {
+                showMessage("Способ доставки изменён");
+            } else {
+                showMessage("Способ доставки добавлен");
+            }
 
             clearFields();
             loadDeliveryMethods();
-
         } else {
-            deliveryMethodView
-                    .getMessageLabel()
-                    .setText(
-                            "Не удалось добавить способ доставки. " +
-                                    "Возможно, такое название уже существует"
-                    );
-        }
-    }
-
-    private void updateDeliveryMethod() {
-        DeliveryMethod selectedDeliveryMethod =
-                deliveryMethodView
-                        .getDeliveryMethodTable()
-                        .getSelectionModel()
-                        .getSelectedItem();
-
-        if (selectedDeliveryMethod == null) {
-            deliveryMethodView
-                    .getMessageLabel()
-                    .setText(
-                            "Выберите способ доставки"
-                    );
-
-            return;
-        }
-
-        String name =
-                deliveryMethodView
-                        .getNameField()
-                        .getText();
-
-        String priceText =
-                deliveryMethodView
-                        .getBasicPriceField()
-                        .getText();
-
-        String deliverySpeed =
-                deliveryMethodView
-                        .getDeliverySpeedField()
-                        .getText();
-
-        if (name.isEmpty()
-                || priceText.isEmpty()
-                || deliverySpeed.isEmpty()) {
-
-            deliveryMethodView
-                    .getMessageLabel()
-                    .setText("Заполните все поля");
-
-            return;
-        }
-
-        BigDecimal basicPrice;
-
-        try {
-            String correctedPrice =
-                    priceText.replace(",", ".");
-
-            basicPrice =
-                    new BigDecimal(correctedPrice);
-
-        } catch (NumberFormatException e) {
-            deliveryMethodView
-                    .getMessageLabel()
-                    .setText(
-                            "Стоимость должна быть числом"
-                    );
-
-            return;
-        }
-
-        if (basicPrice.compareTo(BigDecimal.ZERO) < 0) {
-            deliveryMethodView
-                    .getMessageLabel()
-                    .setText(
-                            "Стоимость не может быть отрицательной"
-                    );
-
-            return;
-        }
-
-        selectedDeliveryMethod.setName(name);
-
-        selectedDeliveryMethod.setBasicPrice(
-                basicPrice
-        );
-
-        selectedDeliveryMethod.setDeliverySpeed(
-                deliverySpeed
-        );
-
-        boolean updated;
-
-        updated = deliveryMethodDao
-                .updateDeliveryMethod(
-                        selectedDeliveryMethod
-                );
-
-        if (updated == true) {
-            deliveryMethodView
-                    .getMessageLabel()
-                    .setText(
-                            "Способ доставки изменён"
-                    );
-
-            clearFields();
-            loadDeliveryMethods();
-
-        } else {
-            deliveryMethodView
-                    .getMessageLabel()
-                    .setText(
-                            "Не удалось изменить способ доставки"
-                    );
+            showMessage("Не удалось сохранить способ доставки");
         }
     }
 
     private void deleteDeliveryMethod() {
-        if (user.getActiveRoleId() == 2) {
-            deliveryMethodView
-                    .getMessageLabel()
-                    .setText(
-                            "У вас нет права на удаление"
-                    );
-
+        if (isManager() || isCustomer()) {
+            showMessage("У вас нет права на удаление");
             return;
         }
-
-        DeliveryMethod selectedDeliveryMethod =
-                deliveryMethodView
-                        .getDeliveryMethodTable()
-                        .getSelectionModel()
-                        .getSelectedItem();
 
         if (selectedDeliveryMethod == null) {
-            deliveryMethodView
-                    .getMessageLabel()
-                    .setText(
-                            "Выберите способ доставки"
-                    );
-
+            showMessage("Выберите способ доставки");
             return;
         }
 
-        boolean deleted;
+        String text = "Удалить способ доставки «"
+                + selectedDeliveryMethod.getName() + "»?";
 
-        deleted = deliveryMethodDao
-                .deleteDeliveryMethod(
-                        selectedDeliveryMethod.getId()
-                );
+        boolean confirmed = ConfirmationDialog.show(text);
 
-        if (deleted == true) {
-            deliveryMethodView
-                    .getMessageLabel()
-                    .setText(
-                            "Способ доставки удалён"
-                    );
+        if (confirmed == false) {
+            return;
+        }
 
+        boolean deleted = deliveryMethodDao.deleteDeliveryMethod(
+                selectedDeliveryMethod.getId()
+        );
+
+        if (deleted) {
+            showMessage("Способ доставки удалён");
             clearFields();
             loadDeliveryMethods();
-
         } else {
-            deliveryMethodView
-                    .getMessageLabel()
-                    .setText(
-                            "Не удалось удалить способ доставки. " +
-                                    "Возможно, он используется для товара или сделки"
-                    );
+            showMessage(
+                    "Не удалось удалить способ доставки. "
+                            + "Возможно, он используется в сделке"
+            );
         }
     }
 
-    private void fillFields() {
-        DeliveryMethod selectedDeliveryMethod =
-                deliveryMethodView
-                        .getDeliveryMethodTable()
-                        .getSelectionModel()
-                        .getSelectedItem();
+    private DeliveryMethod readDeliveryMethod() {
+        String name = view.getNameField().getText().trim();
+        String priceText = view.getBasicPriceField().getText().trim();
+        String speed = view.getDeliverySpeedField().getText().trim();
 
-        if (selectedDeliveryMethod != null) {
-            deliveryMethodView
-                    .getNameField()
-                    .setText(
-                            selectedDeliveryMethod.getName()
-                    );
-
-            deliveryMethodView
-                    .getBasicPriceField()
-                    .setText(
-                            selectedDeliveryMethod
-                                    .getBasicPrice()
-                                    .toString()
-                    );
-
-            deliveryMethodView
-                    .getDeliverySpeedField()
-                    .setText(
-                            selectedDeliveryMethod
-                                    .getDeliverySpeed()
-                    );
+        if (name.isEmpty() || priceText.isEmpty() || speed.isEmpty()) {
+            showMessage("Заполните все поля");
+            return null;
         }
+
+        BigDecimal price;
+
+        try {
+            price = new BigDecimal(priceText.replace(",", "."));
+        } catch (NumberFormatException e) {
+            showMessage("Стоимость указана неверно");
+            return null;
+        }
+
+        if (price.compareTo(BigDecimal.ZERO) < 0) {
+            showMessage("Стоимость не может быть отрицательной");
+            return null;
+        }
+
+        return new DeliveryMethod(name, price, speed);
     }
 
     private void clearFields() {
-        deliveryMethodView
-                .getNameField()
-                .clear();
+        selectedDeliveryMethod = null;
+        view.getDeliveryMethodTable().getSelectionModel().clearSelection();
+        view.getNameField().clear();
+        view.getBasicPriceField().clear();
+        view.getDeliverySpeedField().clear();
+    }
 
-        deliveryMethodView
-                .getBasicPriceField()
-                .clear();
-
-        deliveryMethodView
-                .getDeliverySpeedField()
-                .clear();
-
-        deliveryMethodView
-                .getDeliveryMethodTable()
-                .getSelectionModel()
-                .clearSelection();
+    private void showMessage(String text) {
+        view.getMessageLabel().setText(text);
     }
 }

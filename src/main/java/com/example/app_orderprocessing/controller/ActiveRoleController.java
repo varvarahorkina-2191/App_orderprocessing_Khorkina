@@ -4,7 +4,7 @@ import com.example.app_orderprocessing.dao.RoleDao;
 import com.example.app_orderprocessing.model.Role;
 import com.example.app_orderprocessing.model.User;
 import com.example.app_orderprocessing.view.ActiveRoleView;
-import com.example.app_orderprocessing.view.CustomerView;
+import com.example.app_orderprocessing.view.MainMenuView;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.scene.Scene;
@@ -12,8 +12,7 @@ import javafx.stage.Stage;
 
 import java.util.ArrayList;
 
-public class ActiveRoleController
-        implements EventHandler<ActionEvent> {
+public class ActiveRoleController implements EventHandler<ActionEvent> {
 
     private ActiveRoleView activeRoleView;
     private RoleDao roleDao;
@@ -22,11 +21,7 @@ public class ActiveRoleController
 
     private ArrayList<Role> roles;
 
-    public ActiveRoleController(
-            ActiveRoleView activeRoleView,
-            User user,
-            Stage stage
-    ) {
+    public ActiveRoleController(ActiveRoleView activeRoleView, User user, Stage stage) {
         this.activeRoleView = activeRoleView;
         this.user = user;
         this.stage = stage;
@@ -35,129 +30,103 @@ public class ActiveRoleController
 
         loadRoles();
 
-        activeRoleView
-                .getContinueButton()
-                .setOnAction(this);
+        activeRoleView.getContinueButton().setOnAction(this);
     }
 
     @Override
     public void handle(ActionEvent event) {
-        if (event.getSource()
-                == activeRoleView.getContinueButton()) {
-
+        if (event.getSource() == activeRoleView.getContinueButton()) {
             selectRole();
         }
     }
 
     private void loadRoles() {
-        roles = roleDao.getUserRoles(
-                user.getId()
-        );
+        roles = roleDao.getUserRoles(user.getId());
+
+        activeRoleView.getRoleComboBox().getItems().clear();
 
         int i = 0;
 
         while (i < roles.size()) {
             Role role = roles.get(i);
 
-            activeRoleView
-                    .getRoleComboBox()
-                    .getItems()
-                    .add(role.getRoleName());
+            activeRoleView.getRoleComboBox().getItems().add(role.getRoleName());
 
             i++;
         }
 
         if (roles.isEmpty()) {
-            activeRoleView
-                    .getMessageLabel()
-                    .setText(
-                            "Пользователю не назначены роли"
-                    );
+            activeRoleView.getMessageLabel().setText("Пользователю не назначены роли");
 
-            activeRoleView
-                    .getContinueButton()
-                    .setDisable(true);
-        }
-    }
-
-    private void selectRole() {
-        String roleName;
-
-        roleName = activeRoleView
-                .getRoleComboBox()
-                .getValue();
-
-        if (roleName == null) {
-            activeRoleView
-                    .getMessageLabel()
-                    .setText("Выберите роль");
+            activeRoleView.getContinueButton().setDisable(true);
 
             return;
         }
 
-        Role selectedRole = null;
+        if (roles.size() == 1) {
+            Role role = roles.get(0);
 
+            activeRoleView.getRoleComboBox().setValue(role.getRoleName());
+        }
+    }
+
+    private void selectRole() {
+        String roleName = activeRoleView.getRoleComboBox().getValue();
+
+        if (roleName == null) {
+            activeRoleView.getMessageLabel().setText("Выберите роль");
+            return;
+        }
+
+        Role selectedRole = findRoleByName(roleName);
+
+        if (selectedRole == null) {
+            activeRoleView.getMessageLabel().setText("Роль не найдена");
+            return;
+        }
+
+        boolean updated = roleDao.updateActiveRole(
+                user.getId(),
+                selectedRole.getId()
+        );
+
+        if (!updated) {
+            activeRoleView.getMessageLabel().setText("Не удалось выбрать роль");
+
+            return;
+        }
+
+        user.setActiveRoleId(selectedRole.getId());
+
+        openMainMenu();
+    }
+
+    private Role findRoleByName(String roleName) {
         int i = 0;
 
         while (i < roles.size()) {
             Role role = roles.get(i);
 
             if (role.getRoleName().equals(roleName)) {
-                selectedRole = role;
+                return role;
             }
 
             i++;
         }
 
-        if (selectedRole == null) {
-            activeRoleView
-                    .getMessageLabel()
-                    .setText("Роль не найдена");
-
-            return;
-        }
-
-        boolean updated;
-
-        updated = roleDao.updateActiveRole(
-                user.getId(),
-                selectedRole.getId()
-        );
-
-        if (updated == false) {
-            activeRoleView
-                    .getMessageLabel()
-                    .setText(
-                            "Не удалось выбрать роль"
-                    );
-
-            return;
-        }
-
-        user.setActiveRoleId(
-                selectedRole.getId()
-        );
-
-        openCustomers();
+        return null;
     }
 
-    private void openCustomers() {
-        CustomerView customerView =
-                new CustomerView();
+    private void openMainMenu() {
+        MainMenuView mainMenuView = new MainMenuView();
 
-        new CustomerController(
-                customerView,
-                user,
-                stage
-        );
+        new MainMenuController(mainMenuView, user, stage);
 
-        Scene scene = new Scene(
-                customerView,
-                900,
-                500
-        );
+        Scene scene = new Scene(mainMenuView, 1400, 800);
 
-        stage.setTitle("Заказчики");
+        stage.setTitle("Главное меню");
         stage.setScene(scene);
+        stage.setResizable(true);
+        stage.centerOnScreen();
     }
 }

@@ -1,387 +1,313 @@
 package com.example.app_orderprocessing.controller;
 
 import com.example.app_orderprocessing.dao.CustomerDao;
+import com.example.app_orderprocessing.dao.RoleDao;
 import com.example.app_orderprocessing.model.Customer;
+import com.example.app_orderprocessing.model.Role;
 import com.example.app_orderprocessing.model.User;
+import com.example.app_orderprocessing.util.ConfirmationDialog;
 import com.example.app_orderprocessing.view.CustomerView;
-import com.example.app_orderprocessing.view.LoginView;
-import com.example.app_orderprocessing.view.PersonalAccView;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
-import javafx.scene.Scene;
-import javafx.scene.input.MouseEvent;
-import javafx.stage.Stage;
 
-public class CustomerController {
+public class CustomerController implements EventHandler<ActionEvent> {
 
     private CustomerDao customerDao;
-    private CustomerView customerView;
+    private RoleDao roleDao;
+    private CustomerView view;
     private User user;
-    private Stage stage;
 
-    public CustomerController(
-            CustomerView customerView,
-            User user,
-            Stage stage
-    ) {
-        this.customerView = customerView;
+    private Customer selectedCustomer;
+
+    public CustomerController(CustomerView view, User user) {
+        this.view = view;
         this.user = user;
-        this.stage = stage;
 
         customerDao = new CustomerDao();
+        roleDao = new RoleDao();
 
         loadCustomers();
-        checkRole();
+        configureAccess();
+        connectEvents();
+    }
 
-        customerView.getAddButton().setOnAction(
-                new EventHandler<ActionEvent>() {
-                    @Override
-                    public void handle(ActionEvent event) {
-                        addCustomer();
-                    }
-                }
-        );
+    private void connectEvents() {
+        view.getAddButton().setOnAction(this);
+        view.getEditButton().setOnAction(this);
+        view.getDeleteButton().setOnAction(this);
+        view.getSearchButton().setOnAction(this);
+        view.getResetSearchButton().setOnAction(this);
+        view.getSearchField().setOnAction(this);
 
-        customerView.getEditButton().setOnAction(
-                new EventHandler<ActionEvent>() {
+        view.getCustomerTable().getSelectionModel().selectedItemProperty().addListener(
+                new ChangeListener<Customer>() {
                     @Override
-                    public void handle(ActionEvent event) {
-                        updateCustomer();
-                    }
-                }
-        );
-
-        customerView.getDeleteButton().setOnAction(
-                new EventHandler<ActionEvent>() {
-                    @Override
-                    public void handle(ActionEvent event) {
-                        deleteCustomer();
-                    }
-                }
-        );
-
-        customerView.getProfileButton().setOnAction(
-                new EventHandler<ActionEvent>() {
-                    @Override
-                    public void handle(ActionEvent event) {
-                        openPersonalAccount();
-                    }
-                }
-        );
-
-        customerView.getExitButton().setOnAction(
-                new EventHandler<ActionEvent>() {
-                    @Override
-                    public void handle(ActionEvent event) {
-                        exitFromAccount();
-                    }
-                }
-        );
-
-        customerView.getCustomerTable().setOnMouseClicked(
-                new EventHandler<MouseEvent>() {
-                    @Override
-                    public void handle(MouseEvent event) {
-                        fillFields();
+                    public void changed(
+                            ObservableValue<? extends Customer> observable,
+                            Customer oldValue,
+                            Customer newValue
+                    ) {
+                        selectCustomer(newValue);
                     }
                 }
         );
     }
 
-    private void checkRole() {
-        int roleId = user.getActiveRoleId();
+    @Override
+    public void handle(ActionEvent event) {
+        Object source = event.getSource();
 
-        if (roleId == 2) {
-            customerView
-                    .getDeleteButton()
-                    .setDisable(true);
+        if (source == view.getAddButton()) {
+            addCustomer();
+        } else if (source == view.getEditButton()) {
+            updateCustomer();
+        } else if (source == view.getDeleteButton()) {
+            deleteCustomer();
+        } else if (source == view.getSearchButton() || source == view.getSearchField()) {
+            searchCustomers();
+        } else if (source == view.getResetSearchButton()) {
+            resetSearch();
         }
+    }
+
+    private void configureAccess() {
+        if (isManager()) {
+            view.getDeleteButton().setDisable(true);
+        }
+
+        if (isCustomer()) {
+            view.getAddButton().setDisable(true);
+            view.getEditButton().setDisable(true);
+            view.getDeleteButton().setDisable(true);
+
+            view.getNameField().setDisable(true);
+            view.getAddressField().setDisable(true);
+            view.getPhoneField().setDisable(true);
+            view.getContactField().setDisable(true);
+
+            showMessage("У вас нет доступа к управлению заказчиками");
+        }
+    }
+
+    private boolean isManager() {
+        Role role = roleDao.findByName("MANAGER");
+
+        if (role != null && user.getActiveRoleId() == role.getId()) {
+            return true;
+        }
+
+        return false;
+    }
+
+    private boolean isCustomer() {
+        Role role = roleDao.findByName("CUSTOMER");
+
+        if (role != null && user.getActiveRoleId() == role.getId()) {
+            return true;
+        }
+
+        return false;
     }
 
     public void loadCustomers() {
-        customerView
-                .getCustomerTable()
-                .getItems()
-                .setAll(
-                        customerDao.getAllCustomers()
-                );
+        view.getCustomerTable().getItems().setAll(customerDao.getAllCustomers());
     }
 
-    private void addCustomer() {
-        String name =
-                customerView
-                        .getNameField()
-                        .getText();
+    private void searchCustomers() {
+        String searchText = view.getSearchField().getText().trim();
 
-        String address =
-                customerView
-                        .getAddressField()
-                        .getText();
+        clearSelectedCustomer();
 
-        String phone =
-                customerView
-                        .getPhoneField()
-                        .getText();
-
-        String contact =
-                customerView
-                        .getContactField()
-                        .getText();
-
-        if (name.isEmpty()
-                || address.isEmpty()
-                || phone.isEmpty()
-                || contact.isEmpty()) {
-
-            customerView
-                    .getMessageLabel()
-                    .setText("Заполните все поля");
-
+        if (searchText.isEmpty()) {
+            loadCustomers();
+            showMessage("Показаны все заказчики");
             return;
         }
 
-        Customer customer = new Customer(
-                name,
-                address,
-                phone,
-                contact
-        );
+        view.getCustomerTable().getItems().setAll(customerDao.searchCustomers(searchText));
 
-        boolean added =
-                customerDao.addCustomer(customer);
+        int count = view.getCustomerTable().getItems().size();
+
+        if (count == 0) {
+            showMessage("По вашему запросу заказчики не найдены");
+        } else {
+            showMessage("Найдено заказчиков: " + count);
+        }
+    }
+
+    private void resetSearch() {
+        view.getSearchField().clear();
+        clearSelectedCustomer();
+        loadCustomers();
+
+        showMessage("Поиск сброшен");
+    }
+
+    private void selectCustomer(Customer customer) {
+        selectedCustomer = customer;
+
+        if (customer == null) {
+            return;
+        }
+
+        if (isCustomer()) {
+            return;
+        }
+
+        view.getNameField().setText(customer.getCustomerName());
+        view.getAddressField().setText(customer.getAddress());
+        view.getPhoneField().setText(customer.getPhoneNumber());
+        view.getContactField().setText(customer.getContactPerson());
+    }
+
+    private void addCustomer() {
+        if (isCustomer()) {
+            showMessage("У вас нет права на добавление заказчиков");
+            return;
+        }
+
+        Customer customer = readCustomer();
+
+        if (customer == null) {
+            return;
+        }
+
+        boolean added = customerDao.addCustomer(customer);
 
         if (added == true) {
-            customerView
-                    .getMessageLabel()
-                    .setText("Заказчик добавлен");
-
+            showMessage("Заказчик добавлен");
             clearFields();
-            loadCustomers();
-
+            resetSearchAfterChange();
         } else {
-            customerView
-                    .getMessageLabel()
-                    .setText(
-                            "Не удалось добавить заказчика"
-                    );
+            showMessage(
+                    "Не удалось добавить заказчика. "
+                            + "Возможно, номер телефона уже используется"
+            );
         }
     }
 
     private void updateCustomer() {
-        Customer selectedCustomer =
-                customerView
-                        .getCustomerTable()
-                        .getSelectionModel()
-                        .getSelectedItem();
+        if (isCustomer()) {
+            showMessage("У вас нет права на изменение заказчиков");
+            return;
+        }
 
         if (selectedCustomer == null) {
-            customerView
-                    .getMessageLabel()
-                    .setText("Выберите заказчика");
-
+            showMessage("Выберите заказчика");
             return;
         }
 
-        String name =
-                customerView
-                        .getNameField()
-                        .getText();
+        Customer enteredCustomer = readCustomer();
 
-        String address =
-                customerView
-                        .getAddressField()
-                        .getText();
-
-        String phone =
-                customerView
-                        .getPhoneField()
-                        .getText();
-
-        String contact =
-                customerView
-                        .getContactField()
-                        .getText();
-
-        if (name.isEmpty()
-                || address.isEmpty()
-                || phone.isEmpty()
-                || contact.isEmpty()) {
-
-            customerView
-                    .getMessageLabel()
-                    .setText("Заполните все поля");
-
+        if (enteredCustomer == null) {
             return;
         }
 
-        selectedCustomer.setCustomerName(name);
-        selectedCustomer.setAddress(address);
-        selectedCustomer.setPhoneNumber(phone);
-        selectedCustomer.setContactPerson(contact);
+        selectedCustomer.setCustomerName(enteredCustomer.getCustomerName());
+        selectedCustomer.setAddress(enteredCustomer.getAddress());
+        selectedCustomer.setPhoneNumber(enteredCustomer.getPhoneNumber());
+        selectedCustomer.setContactPerson(enteredCustomer.getContactPerson());
 
-        boolean updated =
-                customerDao.updateCustomer(
-                        selectedCustomer
-                );
+        boolean updated = customerDao.updateCustomer(selectedCustomer);
 
         if (updated == true) {
-            customerView
-                    .getMessageLabel()
-                    .setText(
-                            "Данные заказчика изменены"
-                    );
-
+            showMessage("Данные заказчика изменены");
             clearFields();
-            loadCustomers();
-
+            resetSearchAfterChange();
         } else {
-            customerView
-                    .getMessageLabel()
-                    .setText(
-                            "Не удалось изменить заказчика"
-                    );
+            showMessage(
+                    "Не удалось изменить заказчика. "
+                            + "Возможно, номер телефона уже используется"
+            );
         }
     }
 
     private void deleteCustomer() {
-        if (user.getActiveRoleId() == 2) {
-            customerView
-                    .getMessageLabel()
-                    .setText(
-                            "У вас нет права на удаление"
-                    );
-
+        if (isManager() || isCustomer()) {
+            showMessage("У вас нет права на удаление");
             return;
         }
-
-        Customer selectedCustomer =
-                customerView
-                        .getCustomerTable()
-                        .getSelectionModel()
-                        .getSelectedItem();
 
         if (selectedCustomer == null) {
-            customerView
-                    .getMessageLabel()
-                    .setText("Выберите заказчика");
-
+            showMessage("Выберите заказчика");
             return;
         }
 
-        boolean deleted =
-                customerDao.deleteCustomer(
-                        selectedCustomer.getId()
-                );
+        String text = "Удалить заказчика «"
+                + selectedCustomer.getCustomerName()
+                + "»?";
+
+        boolean confirmed = ConfirmationDialog.show(text);
+
+        if (confirmed == false) {
+            return;
+        }
+
+        boolean deleted = customerDao.deleteCustomer(selectedCustomer.getId());
 
         if (deleted == true) {
-            customerView
-                    .getMessageLabel()
-                    .setText("Заказчик удалён");
-
+            showMessage("Заказчик удалён");
             clearFields();
-            loadCustomers();
-
+            resetSearchAfterChange();
         } else {
-            customerView
-                    .getMessageLabel()
-                    .setText(
-                            "Не удалось удалить заказчика"
-                    );
+            showMessage(
+                    "Не удалось удалить заказчика. "
+                            + "Возможно, у него есть документы"
+            );
         }
     }
 
-    private void fillFields() {
-        Customer selectedCustomer =
-                customerView
-                        .getCustomerTable()
-                        .getSelectionModel()
-                        .getSelectedItem();
+    private Customer readCustomer() {
+        String name = view.getNameField().getText().trim();
+        String address = view.getAddressField().getText().trim();
+        String phone = view.getPhoneField().getText().trim();
+        String contact = view.getContactField().getText().trim();
 
-        if (selectedCustomer != null) {
-            customerView
-                    .getNameField()
-                    .setText(
-                            selectedCustomer
-                                    .getCustomerName()
-                    );
-
-            customerView
-                    .getAddressField()
-                    .setText(
-                            selectedCustomer
-                                    .getAddress()
-                    );
-
-            customerView
-                    .getPhoneField()
-                    .setText(
-                            selectedCustomer
-                                    .getPhoneNumber()
-                    );
-
-            customerView
-                    .getContactField()
-                    .setText(
-                            selectedCustomer
-                                    .getContactPerson()
-                    );
+        if (name.isEmpty() || address.isEmpty() || phone.isEmpty() || contact.isEmpty()) {
+            showMessage("Заполните все поля");
+            return null;
         }
+
+        if (isPhoneValid(phone) == false) {
+            showMessage("Введите корректный номер телефона");
+            return null;
+        }
+
+        Customer customer = new Customer(name, address, phone, contact);
+
+        return customer;
     }
 
-    private void openPersonalAccount() {
-        PersonalAccView personalAccView =
-                new PersonalAccView();
+    private boolean isPhoneValid(String phone) {
+        String regex = "^\\+?[0-9()\\-\\s]{10,20}$";
+        boolean result = phone.matches(regex);
 
-        new PersonalAccController(
-                personalAccView,
-                user,
-                stage
-        );
-
-        Scene scene = new Scene(
-                personalAccView,
-                400,
-                400
-        );
-
-        stage.setTitle("Личный кабинет");
-        stage.setScene(scene);
+        return result;
     }
 
-    private void exitFromAccount() {
-        LoginView loginView =
-                new LoginView();
+    private void resetSearchAfterChange() {
+        view.getSearchField().clear();
+        loadCustomers();
+    }
 
-        new LoginController(
-                loginView,
-                stage
-        );
+    private void clearSelectedCustomer() {
+        selectedCustomer = null;
 
-        Scene scene = new Scene(
-                loginView,
-                400,
-                300
-        );
+        view.getCustomerTable().getSelectionModel().clearSelection();
 
-        stage.setTitle("Авторизация");
-        stage.setScene(scene);
+        view.getNameField().clear();
+        view.getAddressField().clear();
+        view.getPhoneField().clear();
+        view.getContactField().clear();
     }
 
     private void clearFields() {
-        customerView
-                .getNameField()
-                .clear();
+        clearSelectedCustomer();
+    }
 
-        customerView
-                .getAddressField()
-                .clear();
-
-        customerView
-                .getPhoneField()
-                .clear();
-
-        customerView
-                .getContactField()
-                .clear();
+    private void showMessage(String text) {
+        view.getMessageLabel().setText(text);
     }
 }

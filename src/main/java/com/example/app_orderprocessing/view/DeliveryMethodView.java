@@ -30,64 +30,53 @@ public class DeliveryMethodView extends BorderPane {
     private Label messageLabel;
 
     public DeliveryMethodView() {
-        createTitle();
+        createTop();
         createTable();
-        createForm();
+        createBottom();
     }
 
-    private void createTitle() {
-        Label titleLabel =
-                new Label("Управление способами доставки");
+    private void createTop() {
+        Label title = new Label("Управление способами доставки");
 
         VBox topBox = new VBox();
-
         topBox.setPadding(new Insets(10));
-        topBox.getChildren().add(titleLabel);
+        topBox.getChildren().add(title);
 
         setTop(topBox);
     }
 
     private void createTable() {
-        deliveryMethodTable =
-                new TableView<DeliveryMethod>();
+        deliveryMethodTable = new TableView<DeliveryMethod>();
 
         TableColumn<DeliveryMethod, Integer> idColumn =
-                new TableColumn<DeliveryMethod, Integer>(
-                        "ID"
-                );
-
-        idColumn.setCellValueFactory(
-                new PropertyValueFactory<DeliveryMethod, Integer>(
-                        "id"
-                )
-        );
+                new TableColumn<DeliveryMethod, Integer>("ID");
 
         TableColumn<DeliveryMethod, String> nameColumn =
-                new TableColumn<DeliveryMethod, String>(
-                        "Способ доставки"
-                );
-
-        nameColumn.setCellValueFactory(
-                new PropertyValueFactory<DeliveryMethod, String>(
-                        "name"
-                )
-        );
+                new TableColumn<DeliveryMethod, String>("Способ доставки");
 
         TableColumn<DeliveryMethod, BigDecimal> priceColumn =
                 new TableColumn<DeliveryMethod, BigDecimal>(
                         "Базовая стоимость"
                 );
 
+        TableColumn<DeliveryMethod, String> speedColumn =
+                new TableColumn<DeliveryMethod, String>(
+                        "Скорость доставки"
+                );
+
+        idColumn.setCellValueFactory(
+                new PropertyValueFactory<DeliveryMethod, Integer>("id")
+        );
+
+        nameColumn.setCellValueFactory(
+                new PropertyValueFactory<DeliveryMethod, String>("name")
+        );
+
         priceColumn.setCellValueFactory(
                 new PropertyValueFactory<DeliveryMethod, BigDecimal>(
                         "basicPrice"
                 )
         );
-
-        TableColumn<DeliveryMethod, String> speedColumn =
-                new TableColumn<DeliveryMethod, String>(
-                        "Скорость доставки"
-                );
 
         speedColumn.setCellValueFactory(
                 new PropertyValueFactory<DeliveryMethod, String>(
@@ -100,41 +89,22 @@ public class DeliveryMethodView extends BorderPane {
         priceColumn.setPrefWidth(170);
         speedColumn.setPrefWidth(230);
 
-        deliveryMethodTable
-                .getColumns()
-                .add(idColumn);
-
-        deliveryMethodTable
-                .getColumns()
-                .add(nameColumn);
-
-        deliveryMethodTable
-                .getColumns()
-                .add(priceColumn);
-
-        deliveryMethodTable
-                .getColumns()
-                .add(speedColumn);
+        deliveryMethodTable.getColumns().add(idColumn);
+        deliveryMethodTable.getColumns().add(nameColumn);
+        deliveryMethodTable.getColumns().add(priceColumn);
+        deliveryMethodTable.getColumns().add(speedColumn);
 
         setCenter(deliveryMethodTable);
     }
 
-    private void createForm() {
+    private void createBottom() {
         nameField = new TextField();
         basicPriceField = new TextField();
         deliverySpeedField = new TextField();
 
-        nameField.setPromptText(
-                "Например: Курьерская доставка"
-        );
-
-        basicPriceField.setPromptText(
-                "Например: 500"
-        );
-
-        deliverySpeedField.setPromptText(
-                "Например: 1–3 дня"
-        );
+        nameField.setPromptText("Например: Курьерская доставка");
+        basicPriceField.setPromptText("Например: 500");
+        deliverySpeedField.setPromptText("Например: 1–3 дня");
 
         addButton = new Button("Добавить");
         editButton = new Button("Изменить");
@@ -143,61 +113,28 @@ public class DeliveryMethodView extends BorderPane {
         messageLabel = new Label();
 
         GridPane fields = new GridPane();
-
         fields.setHgap(10);
         fields.setVgap(10);
 
-        fields.add(
-                new Label("Название:"),
-                0,
-                0
-        );
+        fields.add(new Label("Название:"), 0, 0);
+        fields.add(nameField, 1, 0);
 
-        fields.add(
-                nameField,
-                1,
-                0
-        );
+        fields.add(new Label("Базовая стоимость:"), 2, 0);
+        fields.add(basicPriceField, 3, 0);
 
-        fields.add(
-                new Label("Базовая стоимость:"),
-                2,
-                0
-        );
-
-        fields.add(
-                basicPriceField,
-                3,
-                0
-        );
-
-        fields.add(
-                new Label("Скорость доставки:"),
-                0,
-                1
-        );
-
-        fields.add(
-                deliverySpeedField,
-                1,
-                1,
-                3,
-                1
-        );
+        fields.add(new Label("Скорость доставки:"), 0, 1);
+        fields.add(deliverySpeedField, 1, 1, 3, 1);
 
         HBox buttons = new HBox(10);
-
         buttons.getChildren().add(addButton);
         buttons.getChildren().add(editButton);
         buttons.getChildren().add(deleteButton);
 
         VBox bottomBox = new VBox(10);
-
+        bottomBox.setPadding(new Insets(10));
         bottomBox.getChildren().add(fields);
         bottomBox.getChildren().add(buttons);
         bottomBox.getChildren().add(messageLabel);
-
-        bottomBox.setPadding(new Insets(10));
 
         setBottom(bottomBox);
     }

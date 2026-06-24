@@ -15,16 +15,21 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 public class DocumentView extends BorderPane {
 
     private TableView<Document> documentTable;
 
-    private ComboBox<String> customerComboBox;
+    private TextField searchField;
     private TextField documentNumberField;
+
+    private ComboBox<String> customerComboBox;
     private DatePicker purchaseDatePicker;
 
+    private Button searchButton;
+    private Button resetSearchButton;
     private Button addButton;
     private Button editButton;
     private Button deleteButton;
@@ -32,19 +37,35 @@ public class DocumentView extends BorderPane {
     private Label messageLabel;
 
     public DocumentView() {
-        createTitle();
+        createTop();
         createTable();
-        createForm();
+        createBottom();
     }
 
-    private void createTitle() {
-        Label titleLabel =
-                new Label("Управление документами сделок");
+    private void createTop() {
+        Label title = new Label("Управление документами сделок");
 
-        VBox topBox = new VBox();
+        searchField = new TextField();
+        searchField.setPromptText(
+                "Введите номер документа, заказчика или дату"
+        );
+        searchField.setPrefWidth(450);
 
+        searchButton = new Button("Найти");
+        resetSearchButton = new Button("Сбросить");
+
+        searchButton.setPrefWidth(100);
+        resetSearchButton.setPrefWidth(100);
+
+        HBox searchBox = new HBox(10);
+        searchBox.getChildren().add(searchField);
+        searchBox.getChildren().add(searchButton);
+        searchBox.getChildren().add(resetSearchButton);
+
+        VBox topBox = new VBox(10);
         topBox.setPadding(new Insets(10));
-        topBox.getChildren().add(titleLabel);
+        topBox.getChildren().add(title);
+        topBox.getChildren().add(searchBox);
 
         setTop(topBox);
     }
@@ -55,87 +76,70 @@ public class DocumentView extends BorderPane {
         TableColumn<Document, Integer> idColumn =
                 new TableColumn<Document, Integer>("ID");
 
-        idColumn.setCellValueFactory(
-                new PropertyValueFactory<Document, Integer>(
-                        "id"
-                )
-        );
-
         TableColumn<Document, Integer> customerIdColumn =
-                new TableColumn<Document, Integer>(
-                        "ID заказчика"
-                );
-
-        customerIdColumn.setCellValueFactory(
-                new PropertyValueFactory<Document, Integer>(
-                        "customerId"
-                )
-        );
+                new TableColumn<Document, Integer>("ID заказчика");
 
         TableColumn<Document, String> customerNameColumn =
-                new TableColumn<Document, String>(
-                        "Заказчик"
-                );
-
-        customerNameColumn.setCellValueFactory(
-                new PropertyValueFactory<Document, String>(
-                        "customerName"
-                )
-        );
+                new TableColumn<Document, String>("Заказчик");
 
         TableColumn<Document, String> numberColumn =
-                new TableColumn<Document, String>(
-                        "Номер документа"
-                );
-
-        numberColumn.setCellValueFactory(
-                new PropertyValueFactory<Document, String>(
-                        "documentNumber"
-                )
-        );
+                new TableColumn<Document, String>("Номер документа");
 
         TableColumn<Document, LocalDate> dateColumn =
-                new TableColumn<Document, LocalDate>(
-                        "Дата покупки"
-                );
+                new TableColumn<Document, LocalDate>("Дата покупки");
+
+        TableColumn<Document, BigDecimal> totalColumn =
+                new TableColumn<Document, BigDecimal>("Общая сумма, руб.");
+
+        idColumn.setCellValueFactory(
+                new PropertyValueFactory<Document, Integer>("id")
+        );
+
+        customerIdColumn.setCellValueFactory(
+                new PropertyValueFactory<Document, Integer>("customerId")
+        );
+
+        customerNameColumn.setCellValueFactory(
+                new PropertyValueFactory<Document, String>("customerName")
+        );
+
+        numberColumn.setCellValueFactory(
+                new PropertyValueFactory<Document, String>("documentNumber")
+        );
 
         dateColumn.setCellValueFactory(
-                new PropertyValueFactory<Document, LocalDate>(
-                        "purchaseDate"
-                )
+                new PropertyValueFactory<Document, LocalDate>("purchaseDate")
+        );
+
+        totalColumn.setCellValueFactory(
+                new PropertyValueFactory<Document, BigDecimal>("totalAmount")
         );
 
         idColumn.setPrefWidth(60);
-        customerIdColumn.setPrefWidth(120);
+        customerIdColumn.setPrefWidth(110);
         customerNameColumn.setPrefWidth(240);
-        numberColumn.setPrefWidth(180);
-        dateColumn.setPrefWidth(150);
+        numberColumn.setPrefWidth(170);
+        dateColumn.setPrefWidth(140);
+        totalColumn.setPrefWidth(170);
 
         documentTable.getColumns().add(idColumn);
         documentTable.getColumns().add(customerIdColumn);
         documentTable.getColumns().add(customerNameColumn);
         documentTable.getColumns().add(numberColumn);
         documentTable.getColumns().add(dateColumn);
+        documentTable.getColumns().add(totalColumn);
 
         setCenter(documentTable);
     }
 
-    private void createForm() {
+    private void createBottom() {
         customerComboBox = new ComboBox<String>();
         documentNumberField = new TextField();
         purchaseDatePicker = new DatePicker();
 
-        customerComboBox.setPromptText(
-                "Выберите заказчика"
-        );
-
-        documentNumberField.setPromptText(
-                "Введите номер документа"
-        );
-
-        purchaseDatePicker.setPromptText(
-                "Выберите дату"
-        );
+        customerComboBox.setPromptText("Выберите заказчика");
+        documentNumberField.setPromptText("Введите номер документа");
+        purchaseDatePicker.setPromptText("Выберите дату");
 
         customerComboBox.setPrefWidth(250);
         documentNumberField.setPrefWidth(200);
@@ -146,67 +150,49 @@ public class DocumentView extends BorderPane {
         deleteButton = new Button("Удалить");
 
         messageLabel = new Label();
+        messageLabel.setWrapText(true);
 
         GridPane fields = new GridPane();
-
         fields.setHgap(10);
         fields.setVgap(10);
 
-        fields.add(
-                new Label("Заказчик:"),
-                0,
-                0
-        );
+        fields.add(new Label("Заказчик:"), 0, 0);
+        fields.add(customerComboBox, 1, 0);
 
-        fields.add(
-                customerComboBox,
-                1,
-                0
-        );
+        fields.add(new Label("Номер документа:"), 0, 1);
+        fields.add(documentNumberField, 1, 1);
 
-        fields.add(
-                new Label("Номер документа:"),
-                0,
-                1
-        );
-
-        fields.add(
-                documentNumberField,
-                1,
-                1
-        );
-
-        fields.add(
-                new Label("Дата покупки:"),
-                2,
-                1
-        );
-
-        fields.add(
-                purchaseDatePicker,
-                3,
-                1
-        );
+        fields.add(new Label("Дата покупки:"), 2, 1);
+        fields.add(purchaseDatePicker, 3, 1);
 
         HBox buttons = new HBox(10);
-
         buttons.getChildren().add(addButton);
         buttons.getChildren().add(editButton);
         buttons.getChildren().add(deleteButton);
 
         VBox bottomBox = new VBox(10);
-
+        bottomBox.setPadding(new Insets(10));
         bottomBox.getChildren().add(fields);
         bottomBox.getChildren().add(buttons);
         bottomBox.getChildren().add(messageLabel);
-
-        bottomBox.setPadding(new Insets(10));
 
         setBottom(bottomBox);
     }
 
     public TableView<Document> getDocumentTable() {
         return documentTable;
+    }
+
+    public TextField getSearchField() {
+        return searchField;
+    }
+
+    public Button getSearchButton() {
+        return searchButton;
+    }
+
+    public Button getResetSearchButton() {
+        return resetSearchButton;
     }
 
     public ComboBox<String> getCustomerComboBox() {

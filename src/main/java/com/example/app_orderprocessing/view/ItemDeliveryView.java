@@ -15,7 +15,13 @@ import javafx.scene.layout.VBox;
 
 public class ItemDeliveryView extends BorderPane {
 
+    private Label titleLabel;
+    private Label messageLabel;
+
     private TableView<ItemDelivery> itemDeliveryTable;
+
+    private TableColumn<ItemDelivery, Integer> itemIdColumn;
+    private TableColumn<ItemDelivery, Integer> deliveryIdColumn;
 
     private ComboBox<String> itemComboBox;
     private ComboBox<String> deliveryComboBox;
@@ -24,21 +30,18 @@ public class ItemDeliveryView extends BorderPane {
     private Button editButton;
     private Button deleteButton;
 
-    private Label messageLabel;
+    private VBox formBox;
 
     public ItemDeliveryView() {
-        createTitle();
+        createTop();
         createTable();
-        createForm();
+        createBottom();
     }
 
-    private void createTitle() {
-        Label titleLabel = new Label(
-                "Доступные способы доставки товаров"
-        );
+    private void createTop() {
+        titleLabel = new Label("Управление способами доставки товаров");
 
-        VBox topBox = new VBox();
-
+        VBox topBox = new VBox(10);
         topBox.setPadding(new Insets(10));
         topBox.getChildren().add(titleLabel);
 
@@ -46,142 +49,106 @@ public class ItemDeliveryView extends BorderPane {
     }
 
     private void createTable() {
-        itemDeliveryTable =
-                new TableView<ItemDelivery>();
+        itemDeliveryTable = new TableView<ItemDelivery>();
 
-        TableColumn<ItemDelivery, Integer> itemIdColumn =
-                new TableColumn<ItemDelivery, Integer>(
-                        "ID товара"
-                );
-
-        itemIdColumn.setCellValueFactory(
-                new PropertyValueFactory<ItemDelivery, Integer>(
-                        "itemId"
-                )
-        );
+        itemIdColumn =
+                new TableColumn<ItemDelivery, Integer>("ID товара");
 
         TableColumn<ItemDelivery, String> itemNameColumn =
-                new TableColumn<ItemDelivery, String>(
-                        "Товар"
-                );
+                new TableColumn<ItemDelivery, String>("Товар");
 
-        itemNameColumn.setCellValueFactory(
-                new PropertyValueFactory<ItemDelivery, String>(
-                        "itemName"
-                )
-        );
-
-        TableColumn<ItemDelivery, Integer> deliveryIdColumn =
-                new TableColumn<ItemDelivery, Integer>(
-                        "ID доставки"
-                );
-
-        deliveryIdColumn.setCellValueFactory(
-                new PropertyValueFactory<ItemDelivery, Integer>(
-                        "deliveryId"
-                )
-        );
+        deliveryIdColumn =
+                new TableColumn<ItemDelivery, Integer>("ID доставки");
 
         TableColumn<ItemDelivery, String> deliveryNameColumn =
-                new TableColumn<ItemDelivery, String>(
-                        "Способ доставки"
-                );
+                new TableColumn<ItemDelivery, String>("Способ доставки");
 
-        deliveryNameColumn.setCellValueFactory(
-                new PropertyValueFactory<ItemDelivery, String>(
-                        "deliveryName"
-                )
+        itemIdColumn.setCellValueFactory(
+                new PropertyValueFactory<ItemDelivery, Integer>("itemId")
         );
 
-        itemIdColumn.setPrefWidth(100);
-        itemNameColumn.setPrefWidth(250);
-        deliveryIdColumn.setPrefWidth(120);
-        deliveryNameColumn.setPrefWidth(280);
+        itemNameColumn.setCellValueFactory(
+                new PropertyValueFactory<ItemDelivery, String>("itemName")
+        );
 
-        itemDeliveryTable
-                .getColumns()
-                .add(itemIdColumn);
+        deliveryIdColumn.setCellValueFactory(
+                new PropertyValueFactory<ItemDelivery, Integer>("deliveryId")
+        );
 
-        itemDeliveryTable
-                .getColumns()
-                .add(itemNameColumn);
+        deliveryNameColumn.setCellValueFactory(
+                new PropertyValueFactory<ItemDelivery, String>("deliveryName")
+        );
 
-        itemDeliveryTable
-                .getColumns()
-                .add(deliveryIdColumn);
+        itemIdColumn.setPrefWidth(120);
+        itemNameColumn.setPrefWidth(320);
+        deliveryIdColumn.setPrefWidth(140);
+        deliveryNameColumn.setPrefWidth(360);
 
-        itemDeliveryTable
-                .getColumns()
-                .add(deliveryNameColumn);
+        itemDeliveryTable.getColumns().add(itemIdColumn);
+        itemDeliveryTable.getColumns().add(itemNameColumn);
+        itemDeliveryTable.getColumns().add(deliveryIdColumn);
+        itemDeliveryTable.getColumns().add(deliveryNameColumn);
+
+        itemDeliveryTable.setPrefHeight(520);
 
         setCenter(itemDeliveryTable);
     }
 
-    private void createForm() {
+    private void createBottom() {
         itemComboBox = new ComboBox<String>();
         deliveryComboBox = new ComboBox<String>();
 
-        itemComboBox.setPromptText(
-                "Выберите товар"
-        );
+        itemComboBox.setPromptText("Выберите товар");
+        deliveryComboBox.setPromptText("Выберите способ доставки");
 
-        deliveryComboBox.setPromptText(
-                "Выберите способ доставки"
-        );
+        itemComboBox.setPrefWidth(300);
+        deliveryComboBox.setPrefWidth(300);
 
-        itemComboBox.setPrefWidth(250);
-        deliveryComboBox.setPrefWidth(250);
+        GridPane fields = new GridPane();
+        fields.setHgap(10);
+        fields.setVgap(10);
+
+        fields.add(new Label("Товар:"), 0, 0);
+        fields.add(itemComboBox, 1, 0);
+
+        fields.add(new Label("Способ доставки:"), 0, 1);
+        fields.add(deliveryComboBox, 1, 1);
 
         addButton = new Button("Добавить");
         editButton = new Button("Изменить");
         deleteButton = new Button("Удалить");
 
-        messageLabel = new Label();
-
-        GridPane fields = new GridPane();
-
-        fields.setHgap(10);
-        fields.setVgap(10);
-
-        fields.add(
-                new Label("Товар:"),
-                0,
-                0
-        );
-
-        fields.add(
-                itemComboBox,
-                1,
-                0
-        );
-
-        fields.add(
-                new Label("Способ доставки:"),
-                0,
-                1
-        );
-
-        fields.add(
-                deliveryComboBox,
-                1,
-                1
-        );
+        addButton.setPrefWidth(120);
+        editButton.setPrefWidth(120);
+        deleteButton.setPrefWidth(120);
 
         HBox buttons = new HBox(10);
-
         buttons.getChildren().add(addButton);
         buttons.getChildren().add(editButton);
         buttons.getChildren().add(deleteButton);
 
-        VBox bottomBox = new VBox(10);
+        messageLabel = new Label();
+        messageLabel.setWrapText(true);
 
-        bottomBox.getChildren().add(fields);
-        bottomBox.getChildren().add(buttons);
-        bottomBox.getChildren().add(messageLabel);
+        formBox = new VBox(10);
+        formBox.setPadding(new Insets(15));
+        formBox.getChildren().add(fields);
+        formBox.getChildren().add(buttons);
+        formBox.getChildren().add(messageLabel);
 
-        bottomBox.setPadding(new Insets(10));
+        setBottom(formBox);
+    }
 
-        setBottom(bottomBox);
+    public void enableCustomerMode() {
+        titleLabel.setText("Доступные способы доставки товаров");
+
+        itemIdColumn.setVisible(false);
+        deliveryIdColumn.setVisible(false);
+
+        formBox.setVisible(false);
+        formBox.setManaged(false);
+
+        itemDeliveryTable.setPrefHeight(650);
     }
 
     public TableView<ItemDelivery> getItemDeliveryTable() {

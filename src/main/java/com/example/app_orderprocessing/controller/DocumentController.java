@@ -2,368 +2,286 @@ package com.example.app_orderprocessing.controller;
 
 import com.example.app_orderprocessing.dao.CustomerDao;
 import com.example.app_orderprocessing.dao.DocumentDao;
+import com.example.app_orderprocessing.dao.RoleDao;
 import com.example.app_orderprocessing.model.Customer;
 import com.example.app_orderprocessing.model.Document;
+import com.example.app_orderprocessing.model.Role;
 import com.example.app_orderprocessing.model.User;
+import com.example.app_orderprocessing.util.ConfirmationDialog;
 import com.example.app_orderprocessing.view.DocumentView;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
-import javafx.scene.input.MouseEvent;
 
 import java.time.LocalDate;
 import java.util.List;
 
-public class DocumentController {
+public class DocumentController implements EventHandler<ActionEvent> {
 
     private DocumentDao documentDao;
     private CustomerDao customerDao;
+    private RoleDao roleDao;
 
-    private DocumentView documentView;
+    private DocumentView view;
     private User user;
 
     private List<Customer> customers;
+    private Document selectedDocument;
 
-    public DocumentController(
-            DocumentView documentView,
-            User user
-    ) {
-        this.documentView = documentView;
+    public DocumentController(DocumentView view, User user) {
+        this.view = view;
         this.user = user;
 
         documentDao = new DocumentDao();
         customerDao = new CustomerDao();
+        roleDao = new RoleDao();
 
         loadCustomers();
         loadDocuments();
-        checkRole();
+        configureAccess();
+        connectEvents();
+    }
 
-        documentView.getAddButton().setOnAction(
-                new EventHandler<ActionEvent>() {
-                    @Override
-                    public void handle(ActionEvent event) {
-                        addDocument();
-                    }
-                }
-        );
+    private void connectEvents() {
+        view.getAddButton().setOnAction(this);
+        view.getEditButton().setOnAction(this);
+        view.getDeleteButton().setOnAction(this);
+        view.getSearchButton().setOnAction(this);
+        view.getResetSearchButton().setOnAction(this);
+        view.getSearchField().setOnAction(this);
 
-        documentView.getEditButton().setOnAction(
-                new EventHandler<ActionEvent>() {
+        view.getDocumentTable().getSelectionModel().selectedItemProperty().addListener(
+                new ChangeListener<Document>() {
                     @Override
-                    public void handle(ActionEvent event) {
-                        updateDocument();
-                    }
-                }
-        );
-
-        documentView.getDeleteButton().setOnAction(
-                new EventHandler<ActionEvent>() {
-                    @Override
-                    public void handle(ActionEvent event) {
-                        deleteDocument();
-                    }
-                }
-        );
-
-        documentView.getDocumentTable().setOnMouseClicked(
-                new EventHandler<MouseEvent>() {
-                    @Override
-                    public void handle(MouseEvent event) {
-                        fillFields();
+                    public void changed(ObservableValue<? extends Document> value,
+                                        Document oldDocument,
+                                        Document newDocument) {
+                        selectDocument(newDocument);
                     }
                 }
         );
     }
 
-    private void checkRole() {
-        if (user.getActiveRoleId() == 2) {
-            documentView
-                    .getDeleteButton()
-                    .setDisable(true);
+    @Override
+    public void handle(ActionEvent event) {
+        Object source = event.getSource();
+
+        if (source == view.getAddButton()) {
+            saveDocument(false);
+        } else if (source == view.getEditButton()) {
+            saveDocument(true);
+        } else if (source == view.getDeleteButton()) {
+            deleteDocument();
+        } else if (source == view.getSearchButton() || source == view.getSearchField()) {
+            searchDocuments();
+        } else if (source == view.getResetSearchButton()) {
+            resetSearch();
         }
+    }
+
+    private void configureAccess() {
+        if (isManager()) {
+            view.getDeleteButton().setDisable(true);
+        }
+
+        if (isCustomer()) {
+            view.getAddButton().setDisable(true);
+            view.getEditButton().setDisable(true);
+            view.getDeleteButton().setDisable(true);
+            view.getCustomerComboBox().setDisable(true);
+            view.getDocumentNumberField().setDisable(true);
+            view.getPurchaseDatePicker().setDisable(true);
+
+            showMessage("У вас нет доступа к документам сделок");
+        }
+    }
+
+    private boolean isManager() {
+        return hasRole("MANAGER");
+    }
+
+    private boolean isCustomer() {
+        return hasRole("CUSTOMER");
+    }
+
+    private boolean hasRole(String name) {
+        Role role = roleDao.findByName(name);
+        return role != null && user.getActiveRoleId() == role.getId();
     }
 
     private void loadCustomers() {
         customers = customerDao.getAllCustomers();
+        view.getCustomerComboBox().getItems().clear();
 
-        documentView.getCustomerComboBox().getItems().clear();
-
-        int i = 0;
-
-        while (i < customers.size()) {
-            Customer customer = customers.get(i);
-
-            documentView
-                    .getCustomerComboBox()
-                    .getItems()
-                    .add(customer.getCustomerName());
-
-            i++;
+        for (Customer customer : customers) {
+            view.getCustomerComboBox().getItems().add(customer.getCustomerName());
         }
     }
 
     public void loadDocuments() {
-        documentView.getDocumentTable().getItems().setAll(documentDao.getAllDocuments());
+        view.getDocumentTable().getItems().setAll(documentDao.getAllDocuments());
     }
 
-    private void addDocument() {
-        Customer selectedCustomer =
-                findSelectedCustomer();
+    private void searchDocuments() {
+        String text = view.getSearchField().getText().trim();
 
-        String documentNumber =
-                documentView
-                        .getDocumentNumberField()
-                        .getText();
+        clearFields();
 
-        LocalDate purchaseDate =
-                documentView.getPurchaseDatePicker().getValue();
-
-        if (selectedCustomer == null) {
-            documentView.getMessageLabel().setText("Выберите заказчика");
-
-            return;
-        }
-
-        if (documentNumber.isEmpty()) {
-            documentView.getMessageLabel().setText("Введите номер документа");
-
-            return;
-        }
-
-        if (purchaseDate == null) {
-            documentView.getMessageLabel().setText("Выберите дату покупки");
-
-            return;
-        }
-
-        if (purchaseDate.isAfter(LocalDate.now())) {
-            documentView.getMessageLabel().setText("Дата покупки не может быть будущей");
-
-            return;
-        }
-
-        Document document = new Document(
-                selectedCustomer.getId(),
-                documentNumber,
-                purchaseDate
-        );
-
-        boolean added =
-                documentDao.addDocument(document);
-
-        if (added == true) {
-            documentView.getMessageLabel().setText("Документ добавлен");
-
-            clearFields();
+        if (text.isEmpty()) {
             loadDocuments();
+            showMessage("Показаны все документы");
+            return;
+        }
 
+        view.getDocumentTable().getItems().setAll(documentDao.searchDocuments(text));
+
+        int count = view.getDocumentTable().getItems().size();
+
+        if (count == 0) {
+            showMessage("Документы не найдены");
         } else {
-            documentView.getMessageLabel().setText("Не удалось добавить документ. " + "Возможно, такой номер уже существует");
+            showMessage("Найдено документов: " + count);
         }
     }
 
-    private void updateDocument() {
-        Document selectedDocument =
-                documentView.getDocumentTable().getSelectionModel().getSelectedItem();
+    private void resetSearch() {
+        view.getSearchField().clear();
+        clearFields();
+        loadDocuments();
+        showMessage("Поиск сброшен");
+    }
 
-        if (selectedDocument == null) {
-            documentView.getMessageLabel().setText("Выберите документ");
+    private void selectDocument(Document document) {
+        selectedDocument = document;
 
+        if (document == null || isCustomer()) {
             return;
         }
 
-        Customer selectedCustomer =
-                findSelectedCustomer();
+        view.getCustomerComboBox().setValue(document.getCustomerName());
+        view.getDocumentNumberField().setText(document.getDocumentNumber());
+        view.getPurchaseDatePicker().setValue(document.getPurchaseDate());
+    }
 
-        String documentNumber =
-                documentView.getDocumentNumberField().getText();
-
-        LocalDate purchaseDate =
-                documentView.getPurchaseDatePicker().getValue();
-
-        if (selectedCustomer == null) {
-            documentView.getMessageLabel().setText("Выберите заказчика");
-
+    private void saveDocument(boolean edit) {
+        if (isCustomer()) {
+            showMessage("У вас нет права на изменение документов");
             return;
         }
 
-        if (documentNumber.isEmpty()) {
-            documentView.getMessageLabel().setText("Введите номер документа");
-
+        if (edit && selectedDocument == null) {
+            showMessage("Выберите документ");
             return;
         }
 
-        if (purchaseDate == null) {
-            documentView.getMessageLabel().setText("Выберите дату покупки");
+        Customer customer = findSelectedCustomer();
+        String number = view.getDocumentNumberField().getText().trim();
+        LocalDate date = view.getPurchaseDatePicker().getValue();
 
+        if (customer == null) {
+            showMessage("Выберите заказчика");
             return;
         }
 
-        if (purchaseDate.isAfter(LocalDate.now())) {
-            documentView.getMessageLabel().setText(
-                            "Дата покупки не может быть наперед"
-                    );
-
+        if (number.isEmpty()) {
+            showMessage("Введите номер документа");
             return;
         }
 
-        selectedDocument.setCustomerId(
-                selectedCustomer.getId()
-        );
+        if (date == null) {
+            showMessage("Выберите дату покупки");
+            return;
+        }
 
-        selectedDocument.setCustomerName(
-                selectedCustomer.getCustomerName()
-        );
+        if (date.isAfter(LocalDate.now())) {
+            showMessage("Дата покупки не может быть будущей");
+            return;
+        }
 
-        selectedDocument.setDocumentNumber(
-                documentNumber
-        );
+        boolean result;
 
-        selectedDocument.setPurchaseDate(
-                purchaseDate
-        );
+        if (edit) {
+            selectedDocument.setCustomerId(customer.getId());
+            selectedDocument.setCustomerName(customer.getCustomerName());
+            selectedDocument.setDocumentNumber(number);
+            selectedDocument.setPurchaseDate(date);
 
-        boolean updated =
-                documentDao.updateDocument(
-                        selectedDocument
-                );
+            result = documentDao.updateDocument(selectedDocument);
+        } else {
+            Document document = new Document(customer.getId(), number, date);
+            result = documentDao.addDocument(document);
+        }
 
-        if (updated == true) {
-            documentView
-                    .getMessageLabel()
-                    .setText("Документ изменён");
+        if (result) {
+            if (edit) {
+                showMessage("Документ изменён");
+            } else {
+                showMessage("Документ добавлен");
+            }
 
             clearFields();
+            view.getSearchField().clear();
             loadDocuments();
-
         } else {
-            documentView
-                    .getMessageLabel()
-                    .setText(
-                            "Не удалось изменить документ"
-                    );
+            showMessage("Не удалось сохранить документ. Возможно, номер уже существует");
         }
     }
 
     private void deleteDocument() {
-        if (user.getActiveRoleId() == 2) {
-            documentView
-                    .getMessageLabel()
-                    .setText(
-                            "У вас нет права на удаление"
-                    );
-
+        if (isManager() || isCustomer()) {
+            showMessage("У вас нет права на удаление");
             return;
         }
-
-        Document selectedDocument =
-                documentView
-                        .getDocumentTable()
-                        .getSelectionModel()
-                        .getSelectedItem();
 
         if (selectedDocument == null) {
-            documentView
-                    .getMessageLabel()
-                    .setText("Выберите документ");
-
+            showMessage("Выберите документ");
             return;
         }
 
-        boolean deleted =
-                documentDao.deleteDocument(
-                        selectedDocument.getId()
-                );
+        String text = "Удалить документ № " + selectedDocument.getDocumentNumber() + "?";
+        boolean confirmed = ConfirmationDialog.show(text);
 
-        if (deleted == true) {
-            documentView
-                    .getMessageLabel()
-                    .setText("Документ удалён");
+        if (confirmed == false) {
+            return;
+        }
 
+        boolean deleted = documentDao.deleteDocument(selectedDocument.getId());
+
+        if (deleted) {
+            showMessage("Документ удалён");
             clearFields();
             loadDocuments();
-
         } else {
-            documentView
-                    .getMessageLabel()
-                    .setText(
-                            "Не удалось удалить документ. " +
-                                    "Возможно, в нём уже есть элементы сделки"
-                    );
+            showMessage("Не удалось удалить документ. Возможно, в нём есть элементы сделки");
         }
     }
 
     private Customer findSelectedCustomer() {
-        String selectedCustomerName =
-                documentView
-                        .getCustomerComboBox()
-                        .getValue();
+        String name = view.getCustomerComboBox().getValue();
 
-        if (selectedCustomerName == null) {
+        if (name == null) {
             return null;
         }
 
-        int i = 0;
-
-        while (i < customers.size()) {
-            Customer customer = customers.get(i);
-
-            if (customer.getCustomerName().equals(
-                    selectedCustomerName
-            )) {
+        for (Customer customer : customers) {
+            if (customer.getCustomerName().equals(name)) {
                 return customer;
             }
-
-            i++;
         }
 
         return null;
     }
 
-    private void fillFields() {
-        Document selectedDocument =
-                documentView
-                        .getDocumentTable()
-                        .getSelectionModel()
-                        .getSelectedItem();
-
-        if (selectedDocument != null) {
-            documentView
-                    .getCustomerComboBox()
-                    .setValue(
-                            selectedDocument.getCustomerName()
-                    );
-
-            documentView
-                    .getDocumentNumberField()
-                    .setText(
-                            selectedDocument.getDocumentNumber()
-                    );
-
-            documentView
-                    .getPurchaseDatePicker()
-                    .setValue(
-                            selectedDocument.getPurchaseDate()
-                    );
-        }
+    private void clearFields() {
+        selectedDocument = null;
+        view.getDocumentTable().getSelectionModel().clearSelection();
+        view.getCustomerComboBox().setValue(null);
+        view.getDocumentNumberField().clear();
+        view.getPurchaseDatePicker().setValue(null);
     }
 
-    private void clearFields() {
-        documentView
-                .getCustomerComboBox()
-                .getSelectionModel()
-                .clearSelection();
-
-        documentView
-                .getDocumentNumberField()
-                .clear();
-
-        documentView
-                .getPurchaseDatePicker()
-                .setValue(null);
-
-        documentView
-                .getDocumentTable()
-                .getSelectionModel()
-                .clearSelection();
+    private void showMessage(String text) {
+        view.getMessageLabel().setText(text);
     }
 }

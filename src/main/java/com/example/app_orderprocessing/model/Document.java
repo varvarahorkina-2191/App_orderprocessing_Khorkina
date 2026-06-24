@@ -1,5 +1,6 @@
 package com.example.app_orderprocessing.model;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 public class Document {
@@ -9,18 +10,16 @@ public class Document {
     private String customerName;
     private String documentNumber;
     private LocalDate purchaseDate;
+    private BigDecimal totalAmount;
 
     public Document() {
     }
 
-    public Document(
-            int customerId,
-            String documentNumber,
-            LocalDate purchaseDate
-    ) {
+    public Document(int customerId, String documentNumber, LocalDate purchaseDate) {
         this.customerId = customerId;
         this.documentNumber = documentNumber;
         this.purchaseDate = purchaseDate;
+        this.totalAmount = BigDecimal.ZERO;
     }
 
     public Document(
@@ -28,13 +27,14 @@ public class Document {
             int customerId,
             String customerName,
             String documentNumber,
-            LocalDate purchaseDate
-    ) {
+            LocalDate purchaseDate,
+            BigDecimal totalAmount) {
         this.id = id;
         this.customerId = customerId;
         this.customerName = customerName;
         this.documentNumber = documentNumber;
         this.purchaseDate = purchaseDate;
+        this.totalAmount = totalAmount;
     }
 
     public int getId() {
@@ -75,5 +75,13 @@ public class Document {
 
     public void setPurchaseDate(LocalDate purchaseDate) {
         this.purchaseDate = purchaseDate;
+    }
+
+    public BigDecimal getTotalAmount() {
+        return totalAmount;
+    }
+
+    public void setTotalAmount(BigDecimal totalAmount) {
+        this.totalAmount = totalAmount;
     }
 }

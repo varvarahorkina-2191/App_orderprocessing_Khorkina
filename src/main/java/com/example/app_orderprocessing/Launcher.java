@@ -1,0 +1,11 @@
+package com.example.app_orderprocessing;
+
+public class Launcher {
+
+    public static void main(String[] args) {
+
+        Main.main(args);
+
+    }
+
+}

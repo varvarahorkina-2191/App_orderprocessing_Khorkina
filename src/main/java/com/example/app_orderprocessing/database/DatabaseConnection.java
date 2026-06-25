@@ -1,30 +1,45 @@
 package com.example.app_orderprocessing.database;
 
+import java.io.FileInputStream;
 import java.sql.Connection;
 import java.sql.DriverManager;
-import java.sql.SQLException;
+import java.util.Properties;
 
 public class DatabaseConnection {
 
     private static DatabaseConnection instance;
     private Connection connection;
 
-    private static final String URL = "jdbc:mysql://localhost:3306/order_processing";
-
-    private static final String USER = "root";
-    private static final String PASSWORD = "";
-
     private DatabaseConnection() {
-        try {
-            connection = DriverManager.getConnection(URL, USER, PASSWORD);
+        connect();
+    }
 
-            System.out.println("База данных подключена");
-        } catch (SQLException e) {
-            System.out.println(
-                    "Не удалось подключиться к базе данных"
+    private void connect() {
+        try {
+            Properties properties = new Properties();
+
+            FileInputStream file =
+                    new FileInputStream("config/database.properties");
+
+            properties.load(file);
+            file.close();
+
+            String url = properties.getProperty("db.url");
+            String user = properties.getProperty("db.user");
+            String password = properties.getProperty("db.password");
+
+            connection = DriverManager.getConnection(
+                    url,
+                    user,
+                    password
             );
 
-            e.printStackTrace();
+            System.out.println("Подключение к базе данных выполнено");
+        } catch (Exception e) {
+            System.out.println(
+                    "Ошибка подключения к базе данных: "
+                            + e.getMessage()
+            );
         }
     }
 

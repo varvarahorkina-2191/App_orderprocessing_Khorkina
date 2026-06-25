@@ -41,15 +41,11 @@ public class UserManagementView extends VBox {
         messageLabel.setMaxWidth(800);
 
         VBox assignedRolesBox = new VBox(8);
-        assignedRolesBox.getChildren().add(
-                new Label("Назначенные роли:")
-        );
+        assignedRolesBox.getChildren().add(new Label("Назначенные роли:"));
         assignedRolesBox.getChildren().add(assignedRolesList);
 
         VBox newRoleBox = new VBox(8);
-        newRoleBox.getChildren().add(
-                new Label("Роль для добавления:")
-        );
+        newRoleBox.getChildren().add(new Label("Роль для добавления:"));
         newRoleBox.getChildren().add(roleComboBox);
 
         HBox roles = new HBox(20);

@@ -1,4 +1,4 @@
-package com.example.app_orderprocessing.util;
+package com.example.app_orderprocessing.utilities;
 
 import org.mindrot.jbcrypt.BCrypt;
 

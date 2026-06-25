@@ -5,7 +5,7 @@ import com.example.app_orderprocessing.dao.RoleDao;
 import com.example.app_orderprocessing.model.Item;
 import com.example.app_orderprocessing.model.Role;
 import com.example.app_orderprocessing.model.User;
-import com.example.app_orderprocessing.util.ConfirmationDialog;
+import com.example.app_orderprocessing.utilities.ConfirmationDialog;
 import com.example.app_orderprocessing.view.ItemView;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
@@ -46,9 +46,7 @@ public class ItemController implements EventHandler<ActionEvent> {
         view.getItemTable().getSelectionModel().selectedItemProperty().addListener(
                 new ChangeListener<Item>() {
                     @Override
-                    public void changed(ObservableValue<? extends Item> value,
-                                        Item oldItem,
-                                        Item newItem) {
+                    public void changed(ObservableValue<? extends Item> value, Item oldItem, Item newItem) {
                         selectItem(newItem);
                     }
                 }
@@ -61,13 +59,17 @@ public class ItemController implements EventHandler<ActionEvent> {
 
         if (source == view.getAddButton()) {
             saveItem(false);
-        } else if (source == view.getEditButton()) {
+        }
+        else if (source == view.getEditButton()) {
             saveItem(true);
-        } else if (source == view.getDeleteButton()) {
+        }
+        else if (source == view.getDeleteButton()) {
             deleteItem();
-        } else if (source == view.getSearchButton() || source == view.getSearchField()) {
+        }
+        else if (source == view.getSearchButton() || source == view.getSearchField()) {
             searchItems();
-        } else if (source == view.getResetSearchButton()) {
+        }
+        else if (source == view.getResetSearchButton()) {
             resetSearch();
         }
     }
@@ -124,7 +126,8 @@ public class ItemController implements EventHandler<ActionEvent> {
 
         if (count == 0) {
             showMessage("Товары не найдены");
-        } else {
+        }
+        else {
             showMessage("Найдено товаров: " + count);
         }
     }
@@ -175,21 +178,24 @@ public class ItemController implements EventHandler<ActionEvent> {
             selectedItem.setHasDelivery(item.isHasDelivery());
 
             result = itemDao.updateItem(selectedItem);
-        } else {
+        }
+        else {
             result = itemDao.addItem(item);
         }
 
         if (result) {
             if (edit) {
                 showMessage("Товар изменён");
-            } else {
+            }
+            else {
                 showMessage("Товар добавлен");
             }
 
             clearFields();
             view.getSearchField().clear();
             loadItems();
-        } else {
+        }
+        else {
             showMessage("Не удалось сохранить товар");
         }
     }
@@ -218,7 +224,8 @@ public class ItemController implements EventHandler<ActionEvent> {
             showMessage("Товар удалён");
             clearFields();
             loadItems();
-        } else {
+        }
+        else {
             showMessage("Не удалось удалить товар. Возможно, он используется в сделке");
         }
     }

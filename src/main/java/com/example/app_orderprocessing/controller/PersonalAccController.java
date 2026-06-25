@@ -2,8 +2,8 @@ package com.example.app_orderprocessing.controller;
 
 import com.example.app_orderprocessing.dao.UserDao;
 import com.example.app_orderprocessing.model.User;
-import com.example.app_orderprocessing.util.PasswordHasher;
-import com.example.app_orderprocessing.util.PasswordValidator;
+import com.example.app_orderprocessing.utilities.PasswordHasher;
+import com.example.app_orderprocessing.utilities.PasswordValidator;
 import com.example.app_orderprocessing.view.MainMenuView;
 import com.example.app_orderprocessing.view.PersonalAccView;
 import javafx.event.ActionEvent;
@@ -16,11 +16,7 @@ public class PersonalAccController implements EventHandler<ActionEvent> {
     private User user;
     private MainMenuView mainMenuView;
 
-    public PersonalAccController(
-            PersonalAccView view,
-            User user,
-            MainMenuView mainMenuView
-    ) {
+    public PersonalAccController(PersonalAccView view, User user, MainMenuView mainMenuView) {
         this.view = view;
         this.user = user;
         this.mainMenuView = mainMenuView;
@@ -38,7 +34,8 @@ public class PersonalAccController implements EventHandler<ActionEvent> {
 
         if (source == view.getSaveButton()) {
             saveUserData();
-        } else if (source == view.getBackButton()) {
+        }
+        else if (source == view.getBackButton()) {
             mainMenuView.showWelcome();
         }
     }
@@ -72,15 +69,9 @@ public class PersonalAccController implements EventHandler<ActionEvent> {
         }
 
         boolean changeLogin = newLogin.equals(user.getLogin()) == false;
-        boolean changePassword = currentPassword.isEmpty() == false
-                || newPassword.isEmpty() == false
-                || repeatPassword.isEmpty() == false;
+        boolean changePassword = currentPassword.isEmpty() == false || newPassword.isEmpty() == false || repeatPassword.isEmpty() == false;
 
-        if (changePassword && checkPasswordData(
-                currentPassword,
-                newPassword,
-                repeatPassword
-        ) == false) {
+        if (changePassword && checkPasswordData(currentPassword, newPassword, repeatPassword) == false) {
             return;
         }
 
@@ -108,14 +99,14 @@ public class PersonalAccController implements EventHandler<ActionEvent> {
         if (loginChanged && passwordChanged) {
             if (changeLogin) {
                 user.setLogin(newLogin);
-                mainMenuView.getUserLabel().setText(
-                        "Пользователь: " + user.getLogin()
+                mainMenuView.getUserLabel().setText("Пользователь: " + user.getLogin()
                 );
             }
 
             clearPasswordFields();
             showMessage("Данные успешно изменены");
-        } else {
+        }
+        else {
             showMessage("Не удалось изменить данные");
         }
     }
@@ -125,9 +116,7 @@ public class PersonalAccController implements EventHandler<ActionEvent> {
             String newPassword,
             String repeatPassword
     ) {
-        if (currentPassword.isEmpty()
-                || newPassword.isEmpty()
-                || repeatPassword.isEmpty()) {
+        if (currentPassword.isEmpty() || newPassword.isEmpty() || repeatPassword.isEmpty()) {
 
             showMessage("Заполните все поля пароля");
             return false;

@@ -5,7 +5,7 @@ import com.example.app_orderprocessing.dao.RoleDao;
 import com.example.app_orderprocessing.model.DeliveryMethod;
 import com.example.app_orderprocessing.model.Role;
 import com.example.app_orderprocessing.model.User;
-import com.example.app_orderprocessing.util.ConfirmationDialog;
+import com.example.app_orderprocessing.utilities.ConfirmationDialog;
 import com.example.app_orderprocessing.view.DeliveryMethodView;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
@@ -142,20 +142,23 @@ public class DeliveryMethodController implements EventHandler<ActionEvent> {
             selectedDeliveryMethod.setDeliverySpeed(delivery.getDeliverySpeed());
 
             result = deliveryMethodDao.updateDeliveryMethod(selectedDeliveryMethod);
-        } else {
+        }
+        else {
             result = deliveryMethodDao.addDeliveryMethod(delivery);
         }
 
         if (result) {
             if (edit) {
                 showMessage("Способ доставки изменён");
-            } else {
+            }
+            else {
                 showMessage("Способ доставки добавлен");
             }
 
             clearFields();
             loadDeliveryMethods();
-        } else {
+        }
+        else {
             showMessage("Не удалось сохранить способ доставки");
         }
     }
@@ -171,8 +174,7 @@ public class DeliveryMethodController implements EventHandler<ActionEvent> {
             return;
         }
 
-        String text = "Удалить способ доставки «"
-                + selectedDeliveryMethod.getName() + "»?";
+        String text = "Удалить способ доставки «" + selectedDeliveryMethod.getName() + "»?";
 
         boolean confirmed = ConfirmationDialog.show(text);
 
@@ -188,7 +190,8 @@ public class DeliveryMethodController implements EventHandler<ActionEvent> {
             showMessage("Способ доставки удалён");
             clearFields();
             loadDeliveryMethods();
-        } else {
+        }
+        else {
             showMessage(
                     "Не удалось удалить способ доставки. "
                             + "Возможно, он используется в сделке"

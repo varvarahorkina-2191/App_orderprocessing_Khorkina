@@ -9,7 +9,7 @@ module com.example.app_orderprocessing {
     exports com.example.app_orderprocessing.view;
     exports com.example.app_orderprocessing.controller;
     exports com.example.app_orderprocessing.dao;
-    exports com.example.app_orderprocessing.util;
+    exports com.example.app_orderprocessing.utilities;
 
     opens com.example.app_orderprocessing.model to javafx.base;
 }

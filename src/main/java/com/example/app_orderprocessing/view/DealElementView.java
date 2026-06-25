@@ -71,53 +71,29 @@ public class DealElementView extends BorderPane {
     private void createTable() {
         dealElementTable = new TableView<DealElement>();
 
-        TableColumn<DealElement, Integer> idColumn =
-                new TableColumn<DealElement, Integer>("ID");
+        TableColumn<DealElement, Integer> idColumn = new TableColumn<DealElement, Integer>("ID");
 
-        TableColumn<DealElement, String> documentColumn =
-                new TableColumn<DealElement, String>("Номер документа");
+        TableColumn<DealElement, String> documentColumn = new TableColumn<DealElement, String>("Номер документа");
 
-        TableColumn<DealElement, String> itemColumn =
-                new TableColumn<DealElement, String>("Товар");
+        TableColumn<DealElement, String> itemColumn = new TableColumn<DealElement, String>("Товар");
 
-        TableColumn<DealElement, String> deliveryColumn =
-                new TableColumn<DealElement, String>("Способ доставки");
+        TableColumn<DealElement, String> deliveryColumn = new TableColumn<DealElement, String>("Способ доставки");
 
-        TableColumn<DealElement, Integer> amountColumn =
-                new TableColumn<DealElement, Integer>("Количество");
+        TableColumn<DealElement, Integer> amountColumn = new TableColumn<DealElement, Integer>("Количество");
 
-        TableColumn<DealElement, BigDecimal> deliveryPriceColumn =
-                new TableColumn<DealElement, BigDecimal>(
-                        "Стоимость доставки"
-                );
+        TableColumn<DealElement, BigDecimal> deliveryPriceColumn = new TableColumn<DealElement, BigDecimal>("Стоимость доставки");
 
-        idColumn.setCellValueFactory(
-                new PropertyValueFactory<DealElement, Integer>("id")
-        );
+        idColumn.setCellValueFactory(new PropertyValueFactory<DealElement, Integer>("id"));
 
-        documentColumn.setCellValueFactory(
-                new PropertyValueFactory<DealElement, String>(
-                        "documentNumber"
-                )
-        );
+        documentColumn.setCellValueFactory(new PropertyValueFactory<DealElement, String>("documentNumber"));
 
-        itemColumn.setCellValueFactory(
-                new PropertyValueFactory<DealElement, String>("itemName")
-        );
+        itemColumn.setCellValueFactory(new PropertyValueFactory<DealElement, String>("itemName"));
 
-        deliveryColumn.setCellValueFactory(
-                new PropertyValueFactory<DealElement, String>("deliveryName")
-        );
+        deliveryColumn.setCellValueFactory(new PropertyValueFactory<DealElement, String>("deliveryName"));
 
-        amountColumn.setCellValueFactory(
-                new PropertyValueFactory<DealElement, Integer>("amount")
-        );
+        amountColumn.setCellValueFactory(new PropertyValueFactory<DealElement, Integer>("amount"));
 
-        deliveryPriceColumn.setCellValueFactory(
-                new PropertyValueFactory<DealElement, BigDecimal>(
-                        "deliveryPrice"
-                )
-        );
+        deliveryPriceColumn.setCellValueFactory(new PropertyValueFactory<DealElement, BigDecimal>("deliveryPrice"));
 
         idColumn.setPrefWidth(60);
         documentColumn.setPrefWidth(160);

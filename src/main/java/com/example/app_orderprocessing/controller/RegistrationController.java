@@ -2,8 +2,8 @@ package com.example.app_orderprocessing.controller;
 
 import com.example.app_orderprocessing.dao.UserDao;
 import com.example.app_orderprocessing.model.User;
-import com.example.app_orderprocessing.util.PasswordHasher;
-import com.example.app_orderprocessing.util.PasswordValidator;
+import com.example.app_orderprocessing.utilities.PasswordHasher;
+import com.example.app_orderprocessing.utilities.PasswordValidator;
 import com.example.app_orderprocessing.view.LoginView;
 import com.example.app_orderprocessing.view.RegistrationView;
 import javafx.event.ActionEvent;
@@ -34,7 +34,8 @@ public class RegistrationController implements EventHandler<ActionEvent> {
 
         if (source == view.getRegisterButton() || source == view.getRepeatPasswordField()) {
             register();
-        } else if (source == view.getBackButton()) {
+        }
+        else if (source == view.getBackButton()) {
             openLogin();
         }
     }
@@ -88,7 +89,8 @@ public class RegistrationController implements EventHandler<ActionEvent> {
             view.getPasswordField().setDisable(true);
             view.getRepeatPasswordField().setDisable(true);
             view.getBackButton().setText("Перейти ко входу");
-        } else {
+        }
+        else {
             showMessage("Не удалось зарегистрировать пользователя");
         }
     }

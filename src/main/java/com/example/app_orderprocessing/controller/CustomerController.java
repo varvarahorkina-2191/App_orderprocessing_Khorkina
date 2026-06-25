@@ -5,7 +5,7 @@ import com.example.app_orderprocessing.dao.RoleDao;
 import com.example.app_orderprocessing.model.Customer;
 import com.example.app_orderprocessing.model.Role;
 import com.example.app_orderprocessing.model.User;
-import com.example.app_orderprocessing.util.ConfirmationDialog;
+import com.example.app_orderprocessing.utilities.ConfirmationDialog;
 import com.example.app_orderprocessing.view.CustomerView;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
@@ -61,13 +61,17 @@ public class CustomerController implements EventHandler<ActionEvent> {
 
         if (source == view.getAddButton()) {
             addCustomer();
-        } else if (source == view.getEditButton()) {
+        }
+        else if (source == view.getEditButton()) {
             updateCustomer();
-        } else if (source == view.getDeleteButton()) {
+        }
+        else if (source == view.getDeleteButton()) {
             deleteCustomer();
-        } else if (source == view.getSearchButton() || source == view.getSearchField()) {
+        }
+        else if (source == view.getSearchButton() || source == view.getSearchField()) {
             searchCustomers();
-        } else if (source == view.getResetSearchButton()) {
+        }
+        else if (source == view.getResetSearchButton()) {
             resetSearch();
         }
     }
@@ -120,9 +124,7 @@ public class CustomerController implements EventHandler<ActionEvent> {
 
         clearSelectedCustomer();
 
-        if (searchText.isEmpty()) {
-            loadCustomers();
-            showMessage("Показаны все заказчики");
+        if (searchText.isEmpty()) {loadCustomers();showMessage("Показаны все заказчики");
             return;
         }
 
@@ -132,7 +134,8 @@ public class CustomerController implements EventHandler<ActionEvent> {
 
         if (count == 0) {
             showMessage("По вашему запросу заказчики не найдены");
-        } else {
+        }
+        else {
             showMessage("Найдено заказчиков: " + count);
         }
     }
@@ -216,11 +219,10 @@ public class CustomerController implements EventHandler<ActionEvent> {
             showMessage("Данные заказчика изменены");
             clearFields();
             resetSearchAfterChange();
-        } else {
-            showMessage(
-                    "Не удалось изменить заказчика. "
-                            + "Возможно, номер телефона уже используется"
-            );
+        }
+        else {
+            showMessage("Не удалось изменить заказчика. "
+                            + "Возможно, номер телефона уже используется");
         }
     }
 
@@ -235,9 +237,7 @@ public class CustomerController implements EventHandler<ActionEvent> {
             return;
         }
 
-        String text = "Удалить заказчика «"
-                + selectedCustomer.getCustomerName()
-                + "»?";
+        String text = "Удалить заказчика «" + selectedCustomer.getCustomerName() + "»?";
 
         boolean confirmed = ConfirmationDialog.show(text);
 
@@ -281,7 +281,7 @@ public class CustomerController implements EventHandler<ActionEvent> {
     }
 
     private boolean isPhoneValid(String phone) {
-        String regex = "^\\+?[0-9()\\-\\s]{10,20}$";
+        String regex = "\\+?[0-9()\\-\\s]{10,20}";
         boolean result = phone.matches(regex);
 
         return result;

@@ -129,9 +129,7 @@ public class ItemView extends BorderPane {
         informationArea.setPrefRowCount(3);
         informationArea.setWrapText(true);
 
-        deliveryCheckBox = new CheckBox(
-                "Для товара доступна доставка"
-        );
+        deliveryCheckBox = new CheckBox("Для товара доступна доставка");
         deliveryCheckBox.setSelected(true);
 
         addButton = new Button("Добавить");

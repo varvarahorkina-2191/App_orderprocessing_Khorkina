@@ -7,7 +7,7 @@ import com.example.app_orderprocessing.model.Customer;
 import com.example.app_orderprocessing.model.Document;
 import com.example.app_orderprocessing.model.Role;
 import com.example.app_orderprocessing.model.User;
-import com.example.app_orderprocessing.util.ConfirmationDialog;
+import com.example.app_orderprocessing.utilities.ConfirmationDialog;
 import com.example.app_orderprocessing.view.DocumentView;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
@@ -69,13 +69,17 @@ public class DocumentController implements EventHandler<ActionEvent> {
 
         if (source == view.getAddButton()) {
             saveDocument(false);
-        } else if (source == view.getEditButton()) {
+        }
+        else if (source == view.getEditButton()) {
             saveDocument(true);
-        } else if (source == view.getDeleteButton()) {
+        }
+        else if (source == view.getDeleteButton()) {
             deleteDocument();
-        } else if (source == view.getSearchButton() || source == view.getSearchField()) {
+        }
+        else if (source == view.getSearchButton() || source == view.getSearchField()) {
             searchDocuments();
-        } else if (source == view.getResetSearchButton()) {
+        }
+        else if (source == view.getResetSearchButton()) {
             resetSearch();
         }
     }
@@ -140,7 +144,8 @@ public class DocumentController implements EventHandler<ActionEvent> {
 
         if (count == 0) {
             showMessage("Документы не найдены");
-        } else {
+        }
+        else {
             showMessage("Найдено документов: " + count);
         }
     }
@@ -208,7 +213,8 @@ public class DocumentController implements EventHandler<ActionEvent> {
             selectedDocument.setPurchaseDate(date);
 
             result = documentDao.updateDocument(selectedDocument);
-        } else {
+        }
+        else {
             Document document = new Document(customer.getId(), number, date);
             result = documentDao.addDocument(document);
         }
@@ -216,14 +222,16 @@ public class DocumentController implements EventHandler<ActionEvent> {
         if (result) {
             if (edit) {
                 showMessage("Документ изменён");
-            } else {
+            }
+            else {
                 showMessage("Документ добавлен");
             }
 
             clearFields();
             view.getSearchField().clear();
             loadDocuments();
-        } else {
+        }
+        else {
             showMessage("Не удалось сохранить документ. Возможно, номер уже существует");
         }
     }
@@ -252,7 +260,8 @@ public class DocumentController implements EventHandler<ActionEvent> {
             showMessage("Документ удалён");
             clearFields();
             loadDocuments();
-        } else {
+        }
+        else {
             showMessage("Не удалось удалить документ. Возможно, в нём есть элементы сделки");
         }
     }

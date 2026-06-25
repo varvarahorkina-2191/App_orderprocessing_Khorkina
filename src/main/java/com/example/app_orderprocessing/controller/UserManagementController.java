@@ -5,7 +5,7 @@ import com.example.app_orderprocessing.dao.UserManagementDao;
 import com.example.app_orderprocessing.model.Role;
 import com.example.app_orderprocessing.model.User;
 import com.example.app_orderprocessing.model.UserAccess;
-import com.example.app_orderprocessing.util.ConfirmationDialog;
+import com.example.app_orderprocessing.utilities.ConfirmationDialog;
 import com.example.app_orderprocessing.view.UserManagementView;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
@@ -61,11 +61,14 @@ public class UserManagementController implements EventHandler<ActionEvent> {
 
         if (source == view.getAddRoleButton()) {
             addRole();
-        } else if (source == view.getRemoveRoleButton()) {
+        }
+        else if (source == view.getRemoveRoleButton()) {
             removeRole();
-        } else if (source == view.getDeleteUserButton()) {
+        }
+        else if (source == view.getDeleteUserButton()) {
             deleteUser();
-        } else if (source == view.getRefreshButton()) {
+        }
+        else if (source == view.getRefreshButton()) {
             refreshTable();
         }
     }
@@ -156,7 +159,8 @@ public class UserManagementController implements EventHandler<ActionEvent> {
             showMessage("Роль добавлена пользователю");
             view.getRoleComboBox().setValue(null);
             loadSelectedUserRoles();
-        } else {
+        }
+        else {
             showMessage("Не удалось добавить роль");
         }
     }
@@ -204,7 +208,8 @@ public class UserManagementController implements EventHandler<ActionEvent> {
             showMessage("Роль удалена у пользователя");
             loadUsers();
             restoreUserSelection(userId);
-        } else {
+        }
+        else {
             showMessage("Не удалось удалить роль");
         }
     }
@@ -232,7 +237,8 @@ public class UserManagementController implements EventHandler<ActionEvent> {
             showMessage("Пользователь удалён");
             clearSelection();
             loadUsers();
-        } else {
+        }
+        else {
             showMessage("Не удалось удалить пользователя");
         }
     }

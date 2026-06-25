@@ -9,7 +9,7 @@ import com.example.app_orderprocessing.model.Item;
 import com.example.app_orderprocessing.model.ItemDelivery;
 import com.example.app_orderprocessing.model.Role;
 import com.example.app_orderprocessing.model.User;
-import com.example.app_orderprocessing.util.ConfirmationDialog;
+import com.example.app_orderprocessing.utilities.ConfirmationDialog;
 import com.example.app_orderprocessing.view.ItemDeliveryView;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
@@ -156,20 +156,23 @@ public class ItemDeliveryController {
                     selected.getItemId(),
                     selected.getDeliveryId()
             );
-        } else {
+        }
+        else {
             result = itemDeliveryDao.addItemDelivery(itemDelivery);
         }
 
         if (result) {
             if (edit) {
                 showMessage("Способ доставки товара изменён");
-            } else {
+            }
+            else {
                 showMessage("Способ доставки назначен товару");
             }
 
             clearFields();
             loadItemDeliveries();
-        } else {
+        }
+        else {
             showMessage("Не удалось сохранить запись. Возможно, такая связь уже существует");
         }
     }
@@ -205,7 +208,8 @@ public class ItemDeliveryController {
             showMessage("Способ доставки удалён у товара");
             clearFields();
             loadItemDeliveries();
-        } else {
+        }
+        else {
             showMessage("Не удалось удалить запись. Возможно, она используется в сделке");
         }
     }

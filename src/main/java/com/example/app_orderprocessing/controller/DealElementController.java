@@ -11,7 +11,7 @@ import com.example.app_orderprocessing.model.Document;
 import com.example.app_orderprocessing.model.Item;
 import com.example.app_orderprocessing.model.Role;
 import com.example.app_orderprocessing.model.User;
-import com.example.app_orderprocessing.util.ConfirmationDialog;
+import com.example.app_orderprocessing.utilities.ConfirmationDialog;
 import com.example.app_orderprocessing.view.DealElementView;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
@@ -103,13 +103,17 @@ public class DealElementController implements EventHandler<ActionEvent> {
 
         if (source == view.getAddButton()) {
             saveDealElement(false);
-        } else if (source == view.getEditButton()) {
+        }
+        else if (source == view.getEditButton()) {
             saveDealElement(true);
-        } else if (source == view.getDeleteButton()) {
+        }
+        else if (source == view.getDeleteButton()) {
             deleteDealElement();
-        } else if (source == view.getSearchButton() || source == view.getSearchField()) {
+        }
+        else if (source == view.getSearchButton() || source == view.getSearchField()) {
             searchDealElements();
-        } else if (source == view.getResetSearchButton()) {
+        }
+        else if (source == view.getResetSearchButton()) {
             resetSearch();
         }
     }

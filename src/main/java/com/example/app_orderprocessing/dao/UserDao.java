@@ -128,7 +128,8 @@ public class UserDao {
             System.out.println("Ошибка при регистрации пользователя");
             e.printStackTrace();
             return false;
-        } finally {
+        }
+        finally {
             closeResources(keys, roleResult, userRoleStatement, userStatement, roleStatement);
 
             try {

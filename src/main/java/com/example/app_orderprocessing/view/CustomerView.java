@@ -63,40 +63,25 @@ public class CustomerView extends BorderPane {
     private void createTable() {
         customerTable = new TableView<Customer>();
 
-        TableColumn<Customer, Integer> idColumn =
-                new TableColumn<Customer, Integer>("ID");
+        TableColumn<Customer, Integer> idColumn = new TableColumn<Customer, Integer>("ID");
 
-        TableColumn<Customer, String> nameColumn =
-                new TableColumn<Customer, String>("Заказчик");
+        TableColumn<Customer, String> nameColumn = new TableColumn<Customer, String>("Заказчик");
 
-        TableColumn<Customer, String> addressColumn =
-                new TableColumn<Customer, String>("Адрес");
+        TableColumn<Customer, String> addressColumn = new TableColumn<Customer, String>("Адрес");
 
-        TableColumn<Customer, String> phoneColumn =
-                new TableColumn<Customer, String>("Телефон");
+        TableColumn<Customer, String> phoneColumn = new TableColumn<Customer, String>("Телефон");
 
-        TableColumn<Customer, String> contactColumn =
-                new TableColumn<Customer, String>("Контактное лицо");
+        TableColumn<Customer, String> contactColumn = new TableColumn<Customer, String>("Контактное лицо");
 
-        idColumn.setCellValueFactory(
-                new PropertyValueFactory<Customer, Integer>("id")
-        );
+        idColumn.setCellValueFactory(new PropertyValueFactory<Customer, Integer>("id"));
 
-        nameColumn.setCellValueFactory(
-                new PropertyValueFactory<Customer, String>("customerName")
-        );
+        nameColumn.setCellValueFactory(new PropertyValueFactory<Customer, String>("customerName"));
 
-        addressColumn.setCellValueFactory(
-                new PropertyValueFactory<Customer, String>("address")
-        );
+        addressColumn.setCellValueFactory(new PropertyValueFactory<Customer, String>("address"));
 
-        phoneColumn.setCellValueFactory(
-                new PropertyValueFactory<Customer, String>("phoneNumber")
-        );
+        phoneColumn.setCellValueFactory(new PropertyValueFactory<Customer, String>("phoneNumber"));
 
-        contactColumn.setCellValueFactory(
-                new PropertyValueFactory<Customer, String>("contactPerson")
-        );
+        contactColumn.setCellValueFactory(new PropertyValueFactory<Customer, String>("contactPerson"));
 
         idColumn.setPrefWidth(60);
         nameColumn.setPrefWidth(220);

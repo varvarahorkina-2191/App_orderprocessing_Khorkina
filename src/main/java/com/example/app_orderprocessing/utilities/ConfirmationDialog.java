@@ -1,4 +1,4 @@
-package com.example.app_orderprocessing.util;
+package com.example.app_orderprocessing.utilities;
 
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;

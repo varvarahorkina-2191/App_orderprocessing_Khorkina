@@ -48,41 +48,21 @@ public class DeliveryMethodView extends BorderPane {
     private void createTable() {
         deliveryMethodTable = new TableView<DeliveryMethod>();
 
-        TableColumn<DeliveryMethod, Integer> idColumn =
-                new TableColumn<DeliveryMethod, Integer>("ID");
+        TableColumn<DeliveryMethod, Integer> idColumn = new TableColumn<DeliveryMethod, Integer>("ID");
 
-        TableColumn<DeliveryMethod, String> nameColumn =
-                new TableColumn<DeliveryMethod, String>("Способ доставки");
+        TableColumn<DeliveryMethod, String> nameColumn = new TableColumn<DeliveryMethod, String>("Способ доставки");
 
-        TableColumn<DeliveryMethod, BigDecimal> priceColumn =
-                new TableColumn<DeliveryMethod, BigDecimal>(
-                        "Базовая стоимость"
-                );
+        TableColumn<DeliveryMethod, BigDecimal> priceColumn = new TableColumn<DeliveryMethod, BigDecimal>("Базовая стоимость");
 
-        TableColumn<DeliveryMethod, String> speedColumn =
-                new TableColumn<DeliveryMethod, String>(
-                        "Скорость доставки"
-                );
+        TableColumn<DeliveryMethod, String> speedColumn = new TableColumn<DeliveryMethod, String>("Скорость доставки");
 
-        idColumn.setCellValueFactory(
-                new PropertyValueFactory<DeliveryMethod, Integer>("id")
-        );
+        idColumn.setCellValueFactory(new PropertyValueFactory<DeliveryMethod, Integer>("id"));
 
-        nameColumn.setCellValueFactory(
-                new PropertyValueFactory<DeliveryMethod, String>("name")
-        );
+        nameColumn.setCellValueFactory(new PropertyValueFactory<DeliveryMethod, String>("name"));
 
-        priceColumn.setCellValueFactory(
-                new PropertyValueFactory<DeliveryMethod, BigDecimal>(
-                        "basicPrice"
-                )
-        );
+        priceColumn.setCellValueFactory(new PropertyValueFactory<DeliveryMethod, BigDecimal>("basicPrice"));
 
-        speedColumn.setCellValueFactory(
-                new PropertyValueFactory<DeliveryMethod, String>(
-                        "deliverySpeed"
-                )
-        );
+        speedColumn.setCellValueFactory(new PropertyValueFactory<DeliveryMethod, String>("deliverySpeed"));
 
         idColumn.setPrefWidth(60);
         nameColumn.setPrefWidth(230);

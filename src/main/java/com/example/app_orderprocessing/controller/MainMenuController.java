@@ -108,21 +108,29 @@ public class MainMenuController implements EventHandler<ActionEvent> {
 
         if (source == view.getUsersButton()) {
             openUsers();
-        } else if (source == view.getCustomersButton()) {
+        }
+        else if (source == view.getCustomersButton()) {
             openCustomers();
-        } else if (source == view.getItemsButton()) {
+        }
+        else if (source == view.getItemsButton()) {
             openItems();
-        } else if (source == view.getDeliveryMethodsButton()) {
+        }
+        else if (source == view.getDeliveryMethodsButton()) {
             openDeliveryMethods();
-        } else if (source == view.getItemDeliveryButton()) {
+        }
+        else if (source == view.getItemDeliveryButton()) {
             openItemDelivery();
-        } else if (source == view.getDocumentsButton()) {
+        }
+        else if (source == view.getDocumentsButton()) {
             openDocuments();
-        } else if (source == view.getDealElementsButton()) {
+        }
+        else if (source == view.getDealElementsButton()) {
             openDealElements();
-        } else if (source == view.getPersonalAccountButton()) {
+        }
+        else if (source == view.getPersonalAccountButton()) {
             openPersonalAccount();
-        } else if (source == view.getExitButton()) {
+        }
+        else if (source == view.getExitButton()) {
             exitFromAccount();
         }
     }

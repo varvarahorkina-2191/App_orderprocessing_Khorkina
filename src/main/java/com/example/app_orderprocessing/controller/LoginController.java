@@ -2,7 +2,7 @@ package com.example.app_orderprocessing.controller;
 
 import com.example.app_orderprocessing.dao.UserDao;
 import com.example.app_orderprocessing.model.User;
-import com.example.app_orderprocessing.util.PasswordHasher;
+import com.example.app_orderprocessing.utilities.PasswordHasher;
 import com.example.app_orderprocessing.view.ActiveRoleView;
 import com.example.app_orderprocessing.view.LoginView;
 import com.example.app_orderprocessing.view.RegistrationView;
@@ -33,7 +33,8 @@ public class LoginController implements EventHandler<ActionEvent> {
 
         if (source == loginView.getLoginButton()) {
             login();
-        } else if (source == loginView.getRegistrationButton()) {
+        }
+        else if (source == loginView.getRegistrationButton()) {
             openRegistration();
         }
     }

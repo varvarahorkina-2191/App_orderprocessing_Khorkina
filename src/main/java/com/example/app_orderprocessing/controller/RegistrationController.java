@@ -74,7 +74,7 @@ public class RegistrationController implements EventHandler<ActionEvent> {
         }
 
         if (PasswordValidator.isValid(password) == false) {
-            showMessage("Пароль должен содержать минимум 8 символов, заглавную букву, цифру и специальный символ");
+            showMessage("Пароль должен содержать минимум 8 символов, заглавную букву, цифру и специальный символ: ! @ # $ % ^ & *");
             return;
         }
 

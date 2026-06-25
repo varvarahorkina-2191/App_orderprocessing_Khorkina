@@ -105,7 +105,7 @@ public class RegistrationController implements EventHandler<ActionEvent> {
         new LoginController(loginView, stage);
 
         stage.setTitle("Авторизация");
-        stage.setScene(new Scene(loginView, 400, 300));
+        stage.setScene(new Scene(loginView, 600, 300));
         stage.setResizable(false);
         stage.centerOnScreen();
     }

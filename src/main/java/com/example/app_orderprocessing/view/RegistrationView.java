@@ -42,7 +42,7 @@ public class RegistrationView extends VBox {
         backButton = new Button("Назад");
 
         registerButton.setPrefWidth(170);
-        backButton.setPrefWidth(100);
+        backButton.setPrefWidth(190);
 
         HBox buttons = new HBox(10);
         buttons.getChildren().add(registerButton);

@@ -14,7 +14,7 @@ public class Main extends Application {
         new LoginController(view, stage);
 
         stage.setTitle("Авторизация");
-        stage.setScene(new Scene(view, 400, 300));
+        stage.setScene(new Scene(view, 600, 300));
         stage.setResizable(false);
         stage.centerOnScreen();
         stage.show();

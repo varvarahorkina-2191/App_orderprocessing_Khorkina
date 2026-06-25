@@ -86,7 +86,7 @@ public class LoginController implements EventHandler<ActionEvent> {
         RegistrationView view = new RegistrationView();
         new RegistrationController(view, stage);
 
-        Scene scene = new Scene(view, 400, 430);
+        Scene scene = new Scene(view, 600, 300);
 
         stage.setTitle("Регистрация");
         stage.setScene(scene);

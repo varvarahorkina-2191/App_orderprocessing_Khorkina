@@ -24,11 +24,7 @@ config/database.properties
 # Тестовые данные
 
 | Роль | Логин | Пароль |
-
 |---|---|---|
-
 | Администратор | `admin` | `Administrator123!` |
-
 | Менеджер | `Manager1` | `TOPmanager1!` |
-
 | Заказчик | `bonnevillecafe` | `BonCafeTver*456*` |

@@ -20,3 +20,15 @@ order_processing
 config/database.properties
 ```
 Если в MySQL используются другой логин, пароль или порт, необходимо изменить значения в файле `config/database.properties`.
+
+# Тестовые данные
+
+| Роль | Логин | Пароль |
+
+|---|---|---|
+
+| Администратор | `admin` | `Administrator123!` |
+
+| Менеджер | `Manager1` | `TOPmanager1!` |
+
+| Заказчик | `bonnevillecafe` | `BonCafeTver*456*` |

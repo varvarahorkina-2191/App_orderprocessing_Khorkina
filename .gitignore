@@ -1,4 +1,9 @@
-target/
 .idea/
+target/
 *.iml
 
+.mvn/
+mvnw
+mvnw.cmd
+
+App_orderprocessing_release/

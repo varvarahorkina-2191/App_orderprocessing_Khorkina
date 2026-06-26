@@ -21,10 +21,17 @@ config/database.properties
 ```
 Если в MySQL используются другой логин, пароль или порт, необходимо изменить значения в файле `config/database.properties`.
 
+Откройте терминал и перейдите в папку, где находятся JAR-файл, папки `config` и `SQL`.
+
+Запустите приложение командой: 
+```text
+java -jar App_orderprocessing.jar
+```
+
 # Тестовые данные
 
 | Роль | Логин | Пароль |
 |---|---|---|
-| Администратор | `admin` | `Administrator123!` |
-| Менеджер | `Manager1` | `TOPmanager1!` |
-| Заказчик | `bonnevillecafe` | `BonCafeTver*456*` |
+| Admin | `admin` | `Administrator123!` |
+| Manager | `Manager1` | `TOPmanager1!` |
+| Customer | `bonnevillecafe` | `BonCafeTver*456*` |
